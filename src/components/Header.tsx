@@ -47,6 +47,9 @@ interface HeaderProps {
   onOpenTrendRadar?: () => void;
   onOpenPythonSuite?: () => void;
   onOpenFeedback?: () => void;
+  onOpenCommunity?: () => void;
+  onOpenCommunityBridge?: () => void;
+  onOpenAdmin?: () => void;
   isFullscreen: boolean;
   onToggleFullscreen: () => void;
   currentSlideIndex: number;
@@ -67,6 +70,9 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenTrendRadar,
   onOpenPythonSuite,
   onOpenFeedback,
+  onOpenCommunity,
+  onOpenCommunityBridge,
+  onOpenAdmin,
   isFullscreen,
   onToggleFullscreen,
   currentSlideIndex,
@@ -478,7 +484,57 @@ export const Header: React.FC<HeaderProps> = ({
                 </div>
               </button>
 
-              {/* 3.3 Foro / Área de Preguntas & Comentarios */}
+              {/* 3.3 Comunidad Kboxhubia & White Papers */}
+              {onOpenCommunity && (
+                <button
+                  onClick={() => {
+                    setOpenDropdown(null);
+                    audioSynth.playClickSound();
+                    onOpenCommunity();
+                  }}
+                  className="w-full text-left p-2.5 rounded-xl hover:bg-[#202024] text-gray-200 hover:text-white transition-all flex items-start gap-3 group"
+                >
+                  <div className="p-2 rounded-lg bg-emerald-950/60 border border-emerald-700/50 text-emerald-400 group-hover:scale-105 transition-transform">
+                    <Layers className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                      <span>{lang === 'es' ? 'Comunidad & White Papers' : 'Community & White Papers'}</span>
+                      <span className="text-[9px] px-1 rounded bg-emerald-950 text-emerald-300 font-mono">9 Papers</span>
+                    </div>
+                    <div className="text-[11px] text-gray-400 leading-tight mt-0.5">
+                      {lang === 'es' ? 'Granja de dinero, encuestas C-Suite y repositorio' : 'Money Farm, C-Suite surveys & papers hub'}
+                    </div>
+                  </div>
+                </button>
+              )}
+
+              {/* 3.4 Community Bridge: WhatsApp & Auto-Learning */}
+              {onOpenCommunityBridge && (
+                <button
+                  onClick={() => {
+                    setOpenDropdown(null);
+                    audioSynth.playClickSound();
+                    onOpenCommunityBridge();
+                  }}
+                  className="w-full text-left p-2.5 rounded-xl hover:bg-[#202024] text-gray-200 hover:text-white transition-all flex items-start gap-3 group bg-emerald-950/20 border border-emerald-800/30"
+                >
+                  <div className="p-2 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 group-hover:scale-105 transition-transform">
+                    <Radio className="w-4 h-4 animate-pulse" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-emerald-300 flex items-center gap-1.5">
+                      <span>{lang === 'es' ? 'Community Bridge (WhatsApp)' : 'Community Bridge (WhatsApp)'}</span>
+                      <span className="text-[9px] px-1 rounded bg-emerald-500 text-black font-mono font-bold">Auto-Sync</span>
+                    </div>
+                    <div className="text-[11px] text-gray-300 leading-tight mt-0.5">
+                      {lang === 'es' ? 'Difusión de tendencias y funnel de consultas al cerebro IA' : 'Trend distribution & query learning funnel into AI brain'}
+                    </div>
+                  </div>
+                </button>
+              )}
+
+              {/* 3.5 Foro / Área de Preguntas & Comentarios */}
               <button
                 onClick={() => {
                   setOpenDropdown(null);
@@ -487,22 +543,63 @@ export const Header: React.FC<HeaderProps> = ({
                 }}
                 className="w-full text-left p-2.5 rounded-xl hover:bg-[#202024] text-gray-200 hover:text-white transition-all flex items-start gap-3 group"
               >
-                <div className="p-2 rounded-lg bg-emerald-950/60 border border-emerald-700/50 text-emerald-400 group-hover:scale-105 transition-transform">
+                <div className="p-2 rounded-lg bg-purple-950/60 border border-purple-700/50 text-purple-400 group-hover:scale-105 transition-transform">
                   <MessageSquareText className="w-4 h-4" />
                 </div>
                 <div>
                   <div className="text-xs font-bold text-white flex items-center gap-1.5">
                     <span>{lang === 'es' ? 'Foro & Preguntas C-Suite' : 'Executive Q&A & Feedback'}</span>
-                    <span className="text-[9px] px-1 rounded bg-emerald-950 text-emerald-300 font-mono">Interact</span>
+                    <span className="text-[9px] px-1 rounded bg-purple-950 text-purple-300 font-mono">Interact</span>
                   </div>
                   <div className="text-[11px] text-gray-400 leading-tight mt-0.5">
                     {lang === 'es' ? 'Respuestas a objeciones, canal de dudas y comentarios' : 'C-Level objection handling matrix & feedback forum'}
                   </div>
                 </div>
               </button>
+
+              {/* 3.5 Admin Dashboard */}
+              {onOpenAdmin && (
+                <button
+                  onClick={() => {
+                    setOpenDropdown(null);
+                    audioSynth.playClickSound();
+                    onOpenAdmin();
+                  }}
+                  className="w-full text-left p-2.5 rounded-xl hover:bg-[#202024] text-gray-200 hover:text-white transition-all flex items-start gap-3 group border-t border-[#222228] mt-1"
+                >
+                  <div className="p-2 rounded-lg bg-amber-950/60 border border-amber-700/50 text-amber-400 group-hover:scale-105 transition-transform">
+                    <Bot className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                      <span>{lang === 'es' ? 'Admin Dashboard (15 Temas)' : 'Admin Dashboard'}</span>
+                      <span className="text-[9px] px-1 rounded bg-amber-950 text-amber-300 font-mono">Master</span>
+                    </div>
+                    <div className="text-[11px] text-gray-400 leading-tight mt-0.5">
+                      {lang === 'es' ? 'Autorizar temas, base de leads y memoria RAG' : 'Authorize topics, leads database & RAG memory'}
+                    </div>
+                  </div>
+                </button>
+              )}
             </div>
           )}
         </div>
+
+        {/* Dedicated Community Bridge Button */}
+        {onOpenCommunityBridge && (
+          <button
+            onClick={() => {
+              audioSynth.playClickSound();
+              onOpenCommunityBridge();
+            }}
+            title="Kbox Community Bridge • WhatsApp Autonomous Distribution & AI Learning"
+            className="hidden md:flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-full bg-emerald-950/40 hover:bg-emerald-900/50 text-emerald-300 border border-emerald-500/40 hover:border-emerald-400 transition-all shadow-sm group"
+          >
+            <Radio className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
+            <span className="tracking-tight">WhatsApp Bridge</span>
+            <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+          </button>
+        )}
 
       </div>
 

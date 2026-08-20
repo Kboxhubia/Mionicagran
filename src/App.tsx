@@ -17,6 +17,10 @@ import { AiFloatingButton } from './components/AiFloatingButton';
 import { TrendRadarModal } from './components/TrendRadarModal';
 import { PythonSandboxModal } from './components/PythonSandboxModal';
 import { ExecutiveFeedbackModal } from './components/ExecutiveFeedbackModal';
+import { FreemiumRegistrationModal } from './components/FreemiumRegistrationModal';
+import { CommunityHubModal } from './components/CommunityHubModal';
+import { CommunityBridgeModal } from './components/CommunityBridgeModal';
+import { AdminDashboardModal } from './components/AdminDashboardModal';
 import { audioSynth } from './services/audioSynth';
 import { UI_TRANSLATIONS } from './services/i18n';
 import { Sparkles } from 'lucide-react';
@@ -55,6 +59,23 @@ export default function App() {
   const [isTrendRadarOpen, setIsTrendRadarOpen] = useState<boolean>(false);
   const [isPythonSuiteOpen, setIsPythonSuiteOpen] = useState<boolean>(false);
   const [isFeedbackOpen, setIsFeedbackOpen] = useState<boolean>(false);
+  const [isCommunityOpen, setIsCommunityOpen] = useState<boolean>(false);
+  const [isCommunityBridgeOpen, setIsCommunityBridgeOpen] = useState<boolean>(false);
+  const [isAdminOpen, setIsAdminOpen] = useState<boolean>(false);
+  const [isFreemiumModalOpen, setIsFreemiumModalOpen] = useState<boolean>(false);
+  const [isSubscribedUnlocked, setIsSubscribedUnlocked] = useState<boolean>(false);
+
+  // 7-second auto popup for DeepTech Avatars & Subscription
+  useEffect(() => {
+    const hasSeenModal = sessionStorage.getItem('kbox_has_seen_freemium_modal');
+    if (!hasSeenModal) {
+      const timer = setTimeout(() => {
+        setIsFreemiumModalOpen(true);
+        sessionStorage.setItem('kbox_has_seen_freemium_modal', 'true');
+      }, 7000);
+      return () => clearTimeout(timer);
+    }
+  }, []);
 
   const t = UI_TRANSLATIONS[lang];
 
@@ -102,6 +123,9 @@ export default function App() {
         onOpenTrendRadar={() => setIsTrendRadarOpen(true)}
         onOpenPythonSuite={() => setIsPythonSuiteOpen(true)}
         onOpenFeedback={() => setIsFeedbackOpen(true)}
+        onOpenCommunity={() => setIsCommunityOpen(true)}
+        onOpenCommunityBridge={() => setIsCommunityBridgeOpen(true)}
+        onOpenAdmin={() => setIsAdminOpen(true)}
         isFullscreen={isFullscreen}
         onToggleFullscreen={toggleFullscreen}
         currentSlideIndex={currentSlideIndex}
@@ -216,6 +240,49 @@ export default function App() {
       <ExecutiveFeedbackModal
         isOpen={isFeedbackOpen}
         onClose={() => setIsFeedbackOpen(false)}
+        lang={lang}
+      />
+
+      {/* Community Hub Modal (White Papers, Money Farm, Surveys, Agent Dual Q&A) */}
+      <CommunityHubModal
+        isOpen={isCommunityOpen}
+        onClose={() => setIsCommunityOpen(false)}
+        lang={lang}
+        onOpenAdmin={() => {
+          setIsCommunityOpen(false);
+          setIsAdminOpen(true);
+        }}
+        onOpenCommunityBridge={() => {
+          setIsCommunityOpen(false);
+          setIsCommunityBridgeOpen(true);
+        }}
+      />
+
+      {/* Community Bridge Modal (WhatsApp Autonomous Distribution & AI Learning Loop) */}
+      <CommunityBridgeModal
+        isOpen={isCommunityBridgeOpen}
+        onClose={() => setIsCommunityBridgeOpen(false)}
+        lang={lang}
+      />
+
+      {/* Admin Dashboard Modal (15 Topics Authorization, Leads DB, Knowledge Index) */}
+      <AdminDashboardModal
+        isOpen={isAdminOpen}
+        onClose={() => setIsAdminOpen(false)}
+        lang={lang}
+        onOpenCommunityBridge={() => {
+          setIsAdminOpen(false);
+          setIsCommunityBridgeOpen(true);
+        }}
+      />
+
+      {/* Freemium Registration Modal (7s Avatar Trigger + 15s Countdown) */}
+      <FreemiumRegistrationModal
+        isOpen={isFreemiumModalOpen}
+        onClose={() => setIsFreemiumModalOpen(false)}
+        onSuccessUnlock={() => {
+          setIsSubscribedUnlocked(true);
+        }}
         lang={lang}
       />
 
