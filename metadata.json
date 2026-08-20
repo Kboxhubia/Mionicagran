@@ -1,0 +1,6 @@
+{
+  "name": "AI Financial Executive Presentation",
+  "description": "Executive presentation & financial analysis platform for CEOs/CFOs on AI Infrastructure Strategy (CAPEX vs OPEX) by Ing. Jorge Huerta.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
