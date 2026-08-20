@@ -164,6 +164,7 @@ export default function App() {
           lang={lang}
           onOpenCalculator={() => setIsCalculatorOpen(true)}
           onOpenPortalModal={() => setIsPortalModalOpen(true)}
+          onOpenPythonSuite={() => setIsPythonSuiteOpen(true)}
         />
       </main>
 

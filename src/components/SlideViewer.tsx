@@ -24,7 +24,12 @@ import {
   Sparkles,
   ArrowRight,
   Flame,
-  Globe2
+  Globe2,
+  Terminal,
+  Play,
+  FileCode,
+  LineChart,
+  HardDrive
 } from 'lucide-react';
 import { SlideData, Language } from '../types';
 import { audioSynth } from '../services/audioSynth';
@@ -35,13 +40,15 @@ interface SlideViewerProps {
   lang?: Language;
   onOpenCalculator?: () => void;
   onOpenPortalModal?: () => void;
+  onOpenPythonSuite?: () => void;
 }
 
 export const SlideViewer: React.FC<SlideViewerProps> = ({
   slide,
   lang = 'es',
   onOpenCalculator,
-  onOpenPortalModal
+  onOpenPortalModal,
+  onOpenPythonSuite
 }) => {
   const currentLang = (lang || 'es') as Language;
   const localized = getLocalizedSlide(slide, currentLang);
@@ -76,7 +83,7 @@ export const SlideViewer: React.FC<SlideViewerProps> = ({
 
       {/* Main Slide Content Canvas */}
       <div className="relative z-10 my-auto py-3">
-        {renderSlideBody(slide, currentLang, onOpenCalculator, onOpenPortalModal)}
+        {renderSlideBody(slide, currentLang, onOpenCalculator, onOpenPortalModal, onOpenPythonSuite)}
       </div>
 
       {/* Footer Executive Takeaway */}
@@ -105,7 +112,8 @@ function renderSlideBody(
   slide: SlideData,
   lang: Language,
   onOpenCalculator?: () => void,
-  onOpenPortalModal?: () => void
+  onOpenPortalModal?: () => void,
+  onOpenPythonSuite?: () => void
 ) {
   switch (slide.type) {
     case 'cover':
@@ -126,6 +134,8 @@ function renderSlideBody(
       return <MlOpsStrategySlide slide={slide} />;
     case 'hybrid_architecture':
       return <HybridArchitectureSlide slide={slide} />;
+    case 'python_capabilities':
+      return <PythonCapabilitiesSlide slide={slide} lang={lang} onOpenPythonSuite={onOpenPythonSuite} />;
     case 'executive_profile':
       return <ExecutiveProfileSlide slide={slide} onOpenPortalModal={onOpenPortalModal} />;
     case 'cta_contact':
@@ -902,7 +912,191 @@ const HybridArchitectureSlide: React.FC<{ slide: SlideData }> = ({ slide }) => {
   );
 };
 
-/* ------------------- SLIDE 10: PROFESSIONAL PROFILE ------------------- */
+/* ------------------- SLIDE 10: PYTHON CAPABILITIES & HIGH PERFORMANCE ENGINE ------------------- */
+const PythonCapabilitiesSlide: React.FC<{
+  slide: SlideData;
+  lang: Language;
+  onOpenPythonSuite?: () => void;
+}> = ({ slide, lang, onOpenPythonSuite }) => {
+  const [activeTab, setActiveTab] = React.useState<number>(0);
+
+  const modules = [
+    {
+      name: 'Monte Carlo TCO',
+      tag: 'FinOps',
+      tagColor: 'text-amber-400 border-amber-500/40 bg-amber-950/40',
+      stat: '10,000 P99',
+      desc: lang === 'es' ? 'Simulación estocástica de volatilidad de tokens, tarifas eléctricas y deriva operativa a 36 meses.' : lang === 'pt' ? 'Simulação estocástica de volatilidade de tokens e custos elétricos a 36 meses.' : 'Stochastic simulation of token price volatility, power utility variance, and 36-mo TCO envelope.',
+      code: `def monte_carlo_tco(simulations=10000):\n    # P10 / P50 / P99 Risk Distribution\n    cloud_opex_p99 = np.percentile(token_burn, 99)\n    onprem_tco = capex + np.percentile(pue_costs, 95)\n    return {"net_savings": cloud_opex_p99 - onprem_tco}`
+    },
+    {
+      name: 'VRAM & KV-Cache',
+      tag: 'Hardware',
+      tagColor: 'text-cyan-400 border-cyan-500/40 bg-cyan-950/40',
+      stat: '111.8 GB / 192 GB',
+      desc: lang === 'es' ? 'Cálculo de pesos de modelo FP8 (65.2 GB) + Pool KV-Cache (32 GB) para 16 streams concurrentes.' : lang === 'pt' ? 'Cálculo de pesos do modelo FP8 (65.2 GB) + KV-Cache (32 GB) para 16 streams.' : 'FP8 model weight calculation (65.2 GB) + KV-Cache pool (32 GB) across 16 concurrent inference streams.',
+      code: `def calculate_vram(params_b=70, precision_bytes=1.0):\n    model_gb = params_b * precision_bytes * 0.931\n    kv_cache_gb = (2 * layers * kv_heads * d_head * ctx * batch) / 1e9\n    return model_gb + kv_cache_gb + cuda_overhead`
+    },
+    {
+      name: 'Telecom Churn',
+      tag: 'Predictive',
+      tagColor: 'text-emerald-400 border-emerald-500/40 bg-emerald-950/40',
+      stat: '89.4% Salvaged',
+      desc: lang === 'es' ? 'Telemetría de jitter de fibra, microcortes y latencia para mitigación proactiva de suscriptores de alto valor.' : lang === 'pt' ? 'Telemetria de jitter de fibra e microquedas para mitigação proativa de churn.' : 'Fiber optic jitter telemetry, micro-outages, and packet loss scoring to protect high-MRR subscribers.',
+      code: `def evaluate_churn_risk(jitter_ms, outages, monthly_bill):\n    risk = 1.0 / (1.0 + math.exp(-(0.18*jitter_ms + 0.85*outages - 2.1)))\n    action = "BANDWIDTH_BOOST" if risk > 0.65 else "HEALTHY"\n    return {"risk": risk, "action": action}`
+    },
+    {
+      name: 'Trend Radar',
+      tag: 'Intelligence',
+      tagColor: 'text-purple-400 border-purple-500/40 bg-purple-950/40',
+      stat: '310k Signals',
+      desc: lang === 'es' ? 'Extracción y scoring de tópicos B2B en LinkedIn, X y ArXiv para generación de diapositivas contextuales.' : lang === 'pt' ? 'Extração e scoring de tópicos B2B no LinkedIn, X e ArXiv.' : 'Real-time B2B topic scoring across LinkedIn, X, and ArXiv to trigger contextual presentation angles.',
+      code: `def rank_presentation_angles(streams):\n    scores = [s['vol'] * 0.45 + s['growth'] * 0.35 + s['b2b'] * 0.20 for s in streams]\n    return sorted(zip(streams, scores), key=lambda x: -x[1])`
+    },
+    {
+      name: 'LaTeX IEEE Whitepaper',
+      tag: 'Publishing',
+      tagColor: 'text-blue-400 border-blue-500/40 bg-blue-950/40',
+      stat: 'IEEE 2-Col',
+      desc: lang === 'es' ? 'Compilador automatizado de la memoria técnica y fórmulas matemáticas a código fuente LaTeX listo para PDF.' : lang === 'pt' ? 'Compilador automatizado de memória técnica para código LaTeX.' : 'Automated technical whitepaper and mathematical formulation compiler into two-column IEEE LaTeX source.',
+      code: `\\documentclass[journal,10pt,twocolumn]{IEEEtran}\n\\title{The $180,000 USD Cloud Error: Sovereign GPU Clusters}\n\\author{Ing. Jorge Huerta, Kboxhubia AI Financial Systems}\n\\maketitle`
+    },
+    {
+      name: 'vLLM Benchmark',
+      tag: 'Performance',
+      tagColor: 'text-amber-300 border-amber-500/40 bg-amber-950/40',
+      stat: '28.4ms TTFT',
+      desc: lang === 'es' ? 'Latencia y throughput: 1,340 tokens/seg en cluster 4x L40S frente a 120 tokens/seg en APIs de nube a $0 costo marginal.' : lang === 'pt' ? 'Latência e throughput: 1.340 tokens/seg vs 120 tokens/seg na nuvem.' : 'High-density benchmarking: 1,340 tokens/sec on 4x L40S vs 120 tokens/sec cloud API at zero marginal token cost.',
+      code: `def benchmark_inference(concurrency=32):\n    ttft_local = 28.4  # ms (PCIe 4.0 Local)\n    ttft_cloud = 480.0 # ms (WAN / Egress)\n    return {"speedup": ttft_cloud / ttft_local, "token_cost_onprem": 0.0}`
+    },
+    {
+      name: 'MACRS Tax Shield',
+      tag: 'FinOps',
+      tagColor: 'text-rose-400 border-rose-500/40 bg-rose-950/40',
+      stat: '$14,400 USD',
+      desc: lang === 'es' ? 'Depreciación acelerada a 5 años recuperando $14,400 USD en créditos fiscales directos (Payback neto: 2.38 meses).' : lang === 'pt' ? 'Depreciação acelerada em 5 anos recuperando $14.400 USD em créditos fiscais.' : '5-year accelerated depreciation capturing $14,400 USD in cash tax equity, compressing net payback to 2.38 months.',
+      code: `def calculate_macrs_depreciation(capex=48000.0, tax_rate=0.30):\n    rates = [0.20, 0.32, 0.192, 0.1152, 0.1152, 0.0576]\n    tax_shield = sum(capex * r * tax_rate for r in rates)\n    return {"tax_equity": tax_shield, "adjusted_capex": capex - tax_shield}`
+    }
+  ];
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+      {/* Left Column: 7 Modules Tab List (5 cols) */}
+      <div className="lg:col-span-5 flex flex-col justify-between space-y-2 p-3.5 rounded-2xl bg-slate-950/90 border border-slate-800 shadow-xl">
+        <div className="flex items-center justify-between px-1 pb-1 border-b border-slate-800/80">
+          <div className="flex items-center gap-2">
+            <Terminal className="w-4 h-4 text-cyan-400" />
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-200">
+              {lang === 'es' ? '7 Módulos de Ejecución Python' : lang === 'pt' ? '7 Módulos de Execução Python' : '7 Python Execution Engines'}
+            </span>
+          </div>
+          <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-cyan-950/80 text-cyan-300 border border-cyan-700/60">
+            Python 3.12+
+          </span>
+        </div>
+
+        {/* Scrollable / Clickable Module Buttons */}
+        <div className="space-y-1.5 max-h-[290px] overflow-y-auto pr-1">
+          {modules.map((mod, idx) => (
+            <button
+              key={idx}
+              onClick={() => {
+                audioSynth.playClickSound();
+                setActiveTab(idx);
+              }}
+              className={`w-full text-left p-2 rounded-xl transition-all border flex items-center justify-between ${
+                activeTab === idx
+                  ? 'bg-slate-900 border-cyan-500/60 shadow-[0_0_12px_rgba(6,182,212,0.15)] ring-1 ring-cyan-500/40'
+                  : 'bg-slate-950/60 border-slate-800/80 hover:bg-slate-900/50 hover:border-slate-700 text-slate-400'
+              }`}
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <span className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-mono font-bold ${
+                  activeTab === idx ? 'bg-cyan-500 text-slate-950' : 'bg-slate-800 text-slate-400'
+                }`}>
+                  {idx + 1}
+                </span>
+                <div className="truncate">
+                  <div className={`text-xs font-bold truncate ${activeTab === idx ? 'text-white' : 'text-slate-300'}`}>
+                    {mod.name}
+                  </div>
+                  <span className={`inline-block px-1.5 py-0.2 rounded text-[9px] font-mono border ${mod.tagColor}`}>
+                    {mod.tag}
+                  </span>
+                </div>
+              </div>
+              <span className="text-[11px] font-mono font-bold text-amber-400 shrink-0 ml-2">
+                {mod.stat}
+              </span>
+            </button>
+          ))}
+        </div>
+
+        {/* CTA Launch Python Sandbox */}
+        <button
+          onClick={() => {
+            audioSynth.playAlertChime();
+            if (onOpenPythonSuite) onOpenPythonSuite();
+          }}
+          className="w-full mt-2 py-2 px-3 rounded-xl bg-gradient-to-r from-cyan-600 via-blue-600 to-amber-600 hover:from-cyan-500 hover:to-amber-500 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-lg shadow-cyan-900/30 transition-all active:scale-[0.98]"
+        >
+          <Play className="w-3.5 h-3.5 fill-white" />
+          <span>
+            {lang === 'es' ? 'Abrir Sandbox Python Completo' : lang === 'pt' ? 'Abrir Sandbox Python Completo' : 'Launch Full Python Sandbox'}
+          </span>
+          <ArrowRight className="w-3.5 h-3.5 ml-auto" />
+        </button>
+      </div>
+
+      {/* Right Column: Code & Mathematical Insight (7 cols) */}
+      <div className="lg:col-span-7 flex flex-col justify-between space-y-3 p-4 rounded-2xl bg-slate-950/90 border border-cyan-500/30 shadow-xl">
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-mono font-bold text-cyan-400 flex items-center gap-1.5">
+              <FileCode className="w-3.5 h-3.5 text-cyan-400" />
+              {modules[activeTab].name} • Engine Specification
+            </span>
+            <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-700/40">
+              Deterministic Output
+            </span>
+          </div>
+          <p className="text-xs text-slate-300 leading-relaxed">
+            {modules[activeTab].desc}
+          </p>
+        </div>
+
+        {/* Code Snippet Terminal Mockup */}
+        <div className="rounded-xl bg-[#090d16] border border-slate-800 p-3 font-mono text-[11px] text-slate-200 overflow-x-auto relative">
+          <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-800/80 text-[10px] text-slate-500">
+            <span>engine_{activeTab + 1}.py</span>
+            <span className="text-amber-400">Strict Typing & IEEE 754</span>
+          </div>
+          <pre className="text-cyan-300/90 leading-snug whitespace-pre-wrap">
+            {modules[activeTab].code}
+          </pre>
+        </div>
+
+        {/* Bottom 3 Benchmark Indicators */}
+        <div className="grid grid-cols-3 gap-2 pt-1 border-t border-slate-800">
+          <div className="p-2 rounded-lg bg-slate-900/90 border border-slate-800 text-center">
+            <div className="text-[10px] text-slate-400">Precisión</div>
+            <div className="text-xs font-bold font-mono text-cyan-400">P99 / FP8 INT4</div>
+          </div>
+          <div className="p-2 rounded-lg bg-slate-900/90 border border-slate-800 text-center">
+            <div className="text-[10px] text-slate-400">Tax Shield</div>
+            <div className="text-xs font-bold font-mono text-emerald-400">$14,400 USD</div>
+          </div>
+          <div className="p-2 rounded-lg bg-slate-900/90 border border-slate-800 text-center">
+            <div className="text-[10px] text-slate-400">Throughput</div>
+            <div className="text-xs font-bold font-mono text-amber-400">1,340 Tok/s</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* ------------------- SLIDE 11: PROFESSIONAL PROFILE ------------------- */
 const ExecutiveProfileSlide: React.FC<{ slide: SlideData; onOpenPortalModal?: () => void }> = ({ slide, onOpenPortalModal }) => {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">

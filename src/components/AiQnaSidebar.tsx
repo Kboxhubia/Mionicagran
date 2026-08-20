@@ -96,8 +96,8 @@ export const AiQnaSidebar: React.FC<AiQnaSidebarProps> = ({
         id: 'msg-welcome',
         role: 'assistant',
         content: language === 'es'
-          ? `**Asesor Financiero y de Infraestructura IA (Gemini 2.5):**\n\nEstoy sincronizado con la **Lámina #${currentSlide.id}: ${currentSlide.title}**.\n\nPuedes hacerme cualquier pregunta técnica o financiera sobre el **TCO de $48k CAPEX**, el **punto de equilibrio a 3.4 meses**, el clúster de **4x NVIDIA L40S**, o casos de uso en **redes de telecomunicaciones y fibra óptica**.`
-          : `**AI Financial & Infrastructure Executive Advisor (Gemini 2.5):**\n\nI am synchronized with **Slide #${currentSlide.id}: ${currentSlide.title}**.\n\nAsk me any financial or technical questions regarding the **$48k CAPEX TCO**, the **3.4-month break-even milestone**, the **4x NVIDIA L40S cluster**, or **telecom & fiber optic use cases**.`,
+          ? `**Asesor Financiero y de Infraestructura IA (Gemini 3.7):**\n\nEstoy sincronizado con la **Lámina #${currentSlide.id}: ${currentSlide.title}**.\n\nPuedes hacerme cualquier pregunta técnica o financiera sobre el **TCO de $48k CAPEX**, el **punto de equilibrio a 3.4 meses**, el clúster de **4x NVIDIA L40S**, o casos de uso en **redes de telecomunicaciones y fibra óptica**.`
+          : `**AI Financial & Infrastructure Executive Advisor (Gemini 3.7):**\n\nI am synchronized with **Slide #${currentSlide.id}: ${currentSlide.title}**.\n\nAsk me any financial or technical questions regarding the **$48k CAPEX TCO**, the **3.4-month break-even milestone**, the **4x NVIDIA L40S cluster**, or **telecom & fiber optic use cases**.`,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         slideId: currentSlide.id
       };

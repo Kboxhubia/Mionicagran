@@ -52,7 +52,8 @@ export interface SlideData {
     | 'hybrid_architecture'
     | 'executive_profile'
     | 'cta_contact'
-    | 'dynamic_trend';
+    | 'dynamic_trend'
+    | 'python_capabilities';
 }
 
 export interface PredictiveAlert {
@@ -117,7 +118,7 @@ export interface TrendSignal {
 export interface PythonSandboxPreset {
   id: string;
   title: string;
-  category: 'MonteCarlo' | 'VRAM' | 'Telecom' | 'DataViz' | 'MLOps' | 'Scraper' | 'LaTeX';
+  category: 'MonteCarlo' | 'VRAM' | 'Telecom' | 'DataViz' | 'MLOps' | 'Scraper' | 'LaTeX' | 'Financial' | 'Benchmark';
   description: {
     es: string;
     en: string;

@@ -36,6 +36,7 @@ interface PresentationPlayerProps {
   lang: Language;
   onOpenCalculator: () => void;
   onOpenPortalModal: () => void;
+  onOpenPythonSuite?: () => void;
 }
 
 export type TransitionEffect = 'slide' | 'fade' | 'zoom';
@@ -48,7 +49,8 @@ export const PresentationPlayer: React.FC<PresentationPlayerProps> = ({
   setAudioSettings,
   lang = 'es',
   onOpenCalculator,
-  onOpenPortalModal
+  onOpenPortalModal,
+  onOpenPythonSuite
 }) => {
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [playbackSpeed, setPlaybackSpeed] = useState<number>(1.0);
@@ -288,6 +290,7 @@ export const PresentationPlayer: React.FC<PresentationPlayerProps> = ({
                 lang={lang}
                 onOpenCalculator={onOpenCalculator}
                 onOpenPortalModal={onOpenPortalModal}
+                onOpenPythonSuite={onOpenPythonSuite}
               />
             </motion.div>
           </AnimatePresence>
