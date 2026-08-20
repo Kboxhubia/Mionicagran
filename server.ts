@@ -33,6 +33,119 @@ async function startServer() {
     });
   });
 
+  // AI-Powered Marketing Assets Generator for Roadmap & Social Distribution
+  app.post('/api/ai/marketing-assets', async (req, res) => {
+    try {
+      const { milestone, platform = 'all', tone = 'executive', language = 'es', customFocus = '' } = req.body;
+
+      const langName = language === 'en' ? 'English' : language === 'pt' ? 'Portuguese' : 'Spanish';
+
+      const prompt = `You are a world-class DeepTech & Enterprise B2B Marketing Strategist and Copywriter for "Kuboxhubia AI Financial Systems", founded by Ing. Jorge Huerta (Telecom Executive & AI Architect).
+
+MISSION:
+Generate 3 distinct, high-converting, professional social media marketing posts based on the following Platform Roadmap Milestone:
+
+MILESTONE CONTEXT:
+- Quarter & Phase: ${milestone?.quarter || 'Q3 2026'} - ${milestone?.phase || 'Fase Estratégica'}
+- Title: "${milestone?.title?.[language] || milestone?.title?.es || milestone?.title || 'Arquitectura de IA Soberana'}"
+- Description: "${milestone?.description?.[language] || milestone?.description?.es || milestone?.description || 'Desacople de APIs de nube y amortización en 3.4 meses'}"
+- Key Deliverables: ${JSON.stringify(milestone?.keyDeliverables || [])}
+- Target Metrics: "${milestone?.metricsTarget || '$180,000 USD de ahorro anual'}"
+- Category: "${milestone?.highlightCategory || 'Finanzas & Telecom'}"
+- Custom Focus: "${customFocus}"
+- Preferred Tone: "${tone}" (Executive / Financial Authority / DeepTech Architecture / High Engagement)
+
+OUTPUT FORMAT:
+Respond with a JSON object strictly conforming to this schema (no markdown fences around JSON, pure JSON):
+{
+  "assets": [
+    {
+      "id": "asset-1",
+      "platform": "LinkedIn",
+      "format": "Executive Long-Form Post",
+      "hook": "Concise attention-grabbing hook",
+      "content": "Full post body with formatting, emojis, clear bullet points, quantitative metrics ($180k saved, 3.4 months payback, 4x L40S, etc.), and strong Call-To-Action to consult with Ing. Jorge Huerta at kuboxhubia@gmail.com",
+      "hashtags": ["#AIInfrastructure", "#CFO", "#EnterpriseAI", "#Kuboxhubia", "#DeepTech"],
+      "targetAudience": "C-Suite, CFOs, CTOs, Telecom VPs",
+      "characterCount": 850
+    },
+    {
+      "id": "asset-2",
+      "platform": "X / Twitter",
+      "format": "Thread / Punchy Post",
+      "hook": "High-impact tech thesis",
+      "content": "Full viral/technical post optimized for X with stats, metrics, and link prompt",
+      "hashtags": ["#AI", "#LLMOps", "#GPUComputing", "#Startups"],
+      "targetAudience": "MLOps Engineers, Tech Founders, Tech Investors",
+      "characterCount": 275
+    },
+    {
+      "id": "asset-3",
+      "platform": "WhatsApp VIP / Newsletter",
+      "format": "Direct Executive Broadcast",
+      "hook": "Exclusive briefing announcement",
+      "content": "Direct, respectful, high-yield message formatted with WhatsApp bold (*text*) markers ready to send to prospective clients and partners",
+      "hashtags": [],
+      "targetAudience": "Prospective Enterprise Clients & Telecom Operators",
+      "characterCount": 520
+    }
+  ]
+}
+
+LANGUAGE REQUIREMENT:
+All generated marketing content must be written in ${langName}. Use authentic, natural, highly professional business terminology.`;
+
+      if (!process.env.GEMINI_API_KEY) {
+        const fallbackAssets = generateFallbackMarketingAssets(milestone, language, tone);
+        return res.json({
+          assets: fallbackAssets,
+          isSimulated: true,
+          notice: 'Generated using curated executive templates'
+        });
+      }
+
+      const ai = getGeminiClient();
+      const response = await ai.models.generateContent({
+        model: 'gemini-3.7-flash',
+        contents: prompt,
+        config: {
+          temperature: 0.35,
+          maxOutputTokens: 2000,
+          responseMimeType: 'application/json'
+        }
+      });
+
+      const text = response.text || '';
+      let parsed;
+      try {
+        parsed = JSON.parse(text);
+      } catch (parseErr) {
+        // clean any potential code fences
+        const cleaned = text.replace(/```json/g, '').replace(/```/g, '').trim();
+        parsed = JSON.parse(cleaned);
+      }
+
+      if (parsed && Array.isArray(parsed.assets)) {
+        return res.json({
+          assets: parsed.assets,
+          isSimulated: false
+        });
+      } else {
+        throw new Error('Unexpected response format from Gemini');
+      }
+
+    } catch (error: any) {
+      console.error('Error in /api/ai/marketing-assets:', error);
+      const { milestone, language = 'es', tone = 'executive' } = req.body || {};
+      const fallbackAssets = generateFallbackMarketingAssets(milestone, language, tone);
+      res.json({
+        assets: fallbackAssets,
+        isSimulated: true,
+        errorNotice: error.message
+      });
+    }
+  });
+
   // AI-Powered Q&A Endpoint for Slides & Financial Data
   app.post('/api/ai/ask', async (req, res) => {
     try {
@@ -260,6 +373,83 @@ function generateSuggestedFollowups(slide: any, lang: string): string[] {
         ? ['What is the payback period for my company?', 'What are the hardware specifications?', 'How do I contact Ing. Jorge Huerta?']
         : ['¿Cuál es el tiempo de recuperación de capital?', '¿Cuáles son las especificaciones técnicas?', '¿Cómo agendar una sesión con el Ing. Jorge Huerta?'];
   }
+}
+
+function generateFallbackMarketingAssets(milestone: any, language: string = 'es', tone: string = 'executive') {
+  const isEn = language === 'en';
+  const isPt = language === 'pt';
+  const title = milestone?.title?.[language] || milestone?.title?.es || milestone?.title || 'Arquitectura de IA Soberana';
+  const quarter = milestone?.quarter || 'Roadmap 2026-2027';
+  const metrics = milestone?.metricsTarget || '$180,000 USD de ahorro anual';
+  const deliverables = (milestone?.keyDeliverables || []).slice(0, 3).map((d: string) => `• ${d}`).join('\n');
+
+  if (isEn) {
+    return [
+      {
+        id: 'asset-fallback-1',
+        platform: 'LinkedIn',
+        format: 'Executive Long-Form Post',
+        hook: `🚀 Strategic Roadmap Update [${quarter}]: Why AI Infrastructure Ownership is the Defining C-Suite Move`,
+        content: `🚨 The $180,000 USD Cloud Error: Most enterprises are quietly burning over $15,000/month in cloud API tokens with ZERO balance sheet equity.\n\nAt Kuboxhubia AI Financial Systems, we are rolling out our strategic roadmap: *${title}*.\n\n📊 Key Strategic Objectives:\n${deliverables}\n\n💡 Targeted Financial Impact: ${metrics}\n\nBy deploying high-density 4x NVIDIA L40S GPU clusters on-premises, enterprises achieve payback within 3.4 months and reduce per-token inference costs by 95-98%.\n\n📩 Connect directly with Ing. Jorge Huerta (kuboxhubia@gmail.com) for a customized 48-hour financial architecture audit.\n\n#EnterpriseAI #CFO #AIInfrastructure #OnPremisesAI #DeepTech #Kuboxhubia #TechLeadership`,
+        hashtags: ['#EnterpriseAI', '#CFO', '#AIInfrastructure', '#OnPremisesAI', '#DeepTech', '#Kuboxhubia'],
+        targetAudience: 'CEOs, CFOs, CTOs, Telecom Operators',
+        characterCount: 780
+      },
+      {
+        id: 'asset-fallback-2',
+        platform: 'X / Twitter',
+        format: 'Punchy Post',
+        hook: `Stop renting intelligence. Own your compute stack. ⚡`,
+        content: `⚡ Roadmap Milestone [${quarter}]: ${title}\n\n• Token Cost: Drops from $15/1M in cloud to <$0.50 local\n• Payback: 3.4 months break-even\n• Impact: ${metrics}\n\n100% data sovereignty + zero cloud egress penalties. 🛡️\n\nFull briefing: https://kboxhubia-github-io.vercel.app/`,
+        hashtags: ['#AI', '#LLMOps', '#GPUComputing', '#DeepTech'],
+        targetAudience: 'Founders, MLOps Engineers, Tech Investors',
+        characterCount: 290
+      },
+      {
+        id: 'asset-fallback-3',
+        platform: 'WhatsApp VIP / Newsletter',
+        format: 'Direct Executive Broadcast',
+        hook: `*Kbox Strategic Briefing [${quarter}]*`,
+        content: `*COMUNICADO EJECUTIVO | KUBOXHUBIA AI FINANCIAL SYSTEMS*\n\nEstimado Colega / Directivo:\n\nLe compartimos la actualización clave de nuestro Roadmap Corporativo:\n🎯 *${title}*\n\n📌 *Hitos Principales:*\n${deliverables}\n\n📈 *Objetivo Financiero:* ${metrics}\n\nSi su organización evalúa optimizar su infraestructura de IA y detener la fuga recurrente en la nube, responda este mensaje para coordinar una sesión técnica con el *Ing. Jorge Huerta*.\n\nWhatsApp: +58 412-3931011 | kuboxhubia@gmail.com`,
+        hashtags: [],
+        targetAudience: 'Prospective Enterprise Clients & Telecom VPs',
+        characterCount: 540
+      }
+    ];
+  }
+
+  return [
+    {
+      id: 'asset-fallback-1',
+      platform: 'LinkedIn',
+      format: 'Post Ejecutivo de Autoridad',
+      hook: `🚀 Actualización Estratégica del Roadmap [${quarter}]: Por qué la Soberanía en IA es la Decisión Financiera Decisiva`,
+      content: `🚨 El Error de los $180,000 USD: La mayoría de las empresas queman más de $15,000 USD al mes en APIs públicas de IA sin retener un solo centavo en su balance general.\n\nEn Kuboxhubia AI Financial Systems presentamos el avance de nuestro Roadmap: *${title}*.\n\n📊 Hitos Clave de Implementación:\n${deliverables}\n\n💡 Impacto Financiero Esperado: ${metrics}\n\nAl desplegar clústeres propios de 4x NVIDIA L40S (192GB VRAM), las organizaciones logran el punto de equilibrio en solo 3.4 meses y reducen el costo unitario de inferencia hasta en un 98%.\n\n📩 Agende una sesión de diagnóstico financiero de 48 horas con el Ing. Jorge Huerta (kuboxhubia@gmail.com).\n\n#InteligenciaArtificial #CFO #AIInfrastructure #SoberaniaDigital #Kuboxhubia #Telecom #TransformacionDigital`,
+      hashtags: ['#InteligenciaArtificial', '#CFO', '#AIInfrastructure', '#SoberaniaDigital', '#Kuboxhubia'],
+      targetAudience: 'CEOs, CFOs, CTOs y Directores de Telecomunicaciones',
+      characterCount: 820
+    },
+    {
+      id: 'asset-fallback-2',
+      platform: 'X / Twitter',
+      format: 'Post de Alto Impacto',
+      hook: `Dejar de rentar IA para ser dueños de nuestra propia infraestructura computacional. ⚡`,
+      content: `⚡ Hito de Roadmap [${quarter}]: ${title}\n\n• Costo por 1M tokens: de $15 (nube) a <$0.50 (local)\n• Retorno de Capital (Payback): 3.4 meses\n• Meta: ${metrics}\n\n100% soberanía de datos y cero latencia de red. 🛡️\n\nVer plataforma interactiva: https://kboxhubia-github-io.vercel.app/`,
+      hashtags: ['#IA', '#DeepTech', '#GPU', '#Innovacion'],
+      targetAudience: 'Ingenieros MLOps, Founders y Tech Leaders',
+      characterCount: 295
+    },
+    {
+      id: 'asset-fallback-3',
+      platform: 'WhatsApp VIP / Broadcast',
+      format: 'Mensaje Directo para Clientes Potenciales',
+      hook: `*Briefing Estratégico Kuboxhubia [${quarter}]*`,
+      content: `*INFORME ESTRATÉGICO | KUBOXHUBIA AI FINANCIAL SYSTEMS*\n\nEstimado Directivo / Aliado:\n\nLe presentamos el hito activo en nuestro Roadmap de Infraestructura:\n🎯 *${title}*\n\n📌 *Entregables Clave:*\n${deliverables}\n\n📈 *Impacto Financiero Proyectado:* ${metrics}\n\nPara evaluar el dimensionamiento de hardware y calcular el ahorro exacto para su empresa, contáctenos directamente al WhatsApp *+58 412-3931011* o vía correo a *kuboxhubia@gmail.com* con el *Ing. Jorge Huerta*.`,
+      hashtags: [],
+      targetAudience: 'Prospectos Ejecutivos y Operadores de Telecomunicaciones',
+      characterCount: 560
+    }
+  ];
 }
 
 startServer();

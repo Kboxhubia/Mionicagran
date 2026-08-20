@@ -22,6 +22,7 @@ import {
 import { ResearchTopic, MoneyFarmTrend } from '../types/communityTypes';
 import { MONEY_FARM_TRENDS, ADMIN_PHONE_NUMBER, WHATSAPP_GROUP_NAME, WHATSAPP_DIRECT_LINK, INITIAL_SURVEY_QUESTIONS } from '../data/communityData';
 import { agentEngine, AgentQueryResult } from '../services/agentEngine';
+import { communityBridgeService } from '../services/communityBridgeService';
 import { audioSynth } from '../services/audioSynth';
 
 interface CommunityHubModalProps {
@@ -367,6 +368,7 @@ export const CommunityHubModal: React.FC<CommunityHubModalProps> = ({
                       href={WHATSAPP_DIRECT_LINK}
                       target="_blank"
                       rel="noopener noreferrer"
+                      onClick={() => communityBridgeService.handleUserJoinWhatsApp()}
                       className="px-3 py-2 rounded-xl text-xs font-bold bg-emerald-500 hover:bg-emerald-400 text-black flex items-center gap-1.5 shrink-0 transition-all"
                     >
                       <MessageCircle className="w-3.5 h-3.5" />

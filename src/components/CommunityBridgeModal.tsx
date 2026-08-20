@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   X,
   Radio,
@@ -21,17 +21,30 @@ import {
   ShieldCheck,
   Zap,
   Flame,
-  FileText
+  FileText,
+  Headphones,
+  LifeBuoy,
+  UserCheck,
+  UserPlus,
+  Save,
+  RotateCcw,
+  Sliders,
+  Settings,
+  Smile
 } from 'lucide-react';
 import {
   WhatsAppBroadcastItem,
   InboundWhatsAppQuery,
   BridgeTelemetryStats,
   BroadcastScheduleConfig,
-  KnowledgeItem
+  KnowledgeItem,
+  WelcomeMessageConfig,
+  WelcomePreset
 } from '../types/communityTypes';
 import {
-  communityBridgeService
+  communityBridgeService,
+  WELCOME_PRESETS,
+  PLATFORM_PUBLIC_URL
 } from '../services/communityBridgeService';
 import {
   ADMIN_PHONE_NUMBER,
@@ -54,13 +67,21 @@ export const CommunityBridgeModal: React.FC<CommunityBridgeModalProps> = ({
   onClose,
   lang = 'es'
 }) => {
-  const [activeTab, setActiveTab] = useState<'outbound' | 'inbound' | 'schedules' | 'synaptic_loop'>('outbound');
+  const [activeTab, setActiveTab] = useState<'outbound' | 'inbound' | 'welcome_config' | 'schedules' | 'synaptic_loop'>('outbound');
   
   // Bridge State
   const [broadcasts, setBroadcasts] = useState<WhatsAppBroadcastItem[]>(() => communityBridgeService.getBroadcasts());
   const [inboundQueries, setInboundQueries] = useState<InboundWhatsAppQuery[]>(() => communityBridgeService.getInboundQueries());
   const [schedules, setSchedules] = useState<BroadcastScheduleConfig[]>(() => communityBridgeService.getSchedules());
   const [telemetry, setTelemetry] = useState<BridgeTelemetryStats>(() => communityBridgeService.getTelemetry());
+
+  // Welcome Message Configuration State
+  const [welcomeConfig, setWelcomeConfig] = useState<WelcomeMessageConfig>(() => communityBridgeService.getWelcomeConfig());
+  const [welcomeTemplateInput, setWelcomeTemplateInput] = useState<string>(() => communityBridgeService.getWelcomeConfig().template);
+  const [previewUserName, setPreviewUserName] = useState<string>('Ing. Carlos Mendoza (CTO FibraNet)');
+  const [welcomeSavedToast, setWelcomeSavedToast] = useState<boolean>(false);
+  const [welcomeNotification, setWelcomeNotification] = useState<string | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Inbound Parsing Input State
   const [rawInput, setRawInput] = useState<string>('');
@@ -71,8 +92,52 @@ export const CommunityBridgeModal: React.FC<CommunityBridgeModalProps> = ({
   // Generator Selectors
   const [selectedTopicId, setSelectedTopicId] = useState<string>(ALL_15_RESEARCH_TOPICS[0].id);
   const [selectedTrendNumber, setSelectedTrendNumber] = useState<number>(1);
+  const [selectedSupportTopic, setSelectedSupportTopic] = useState<string>('cluster_sizing');
 
   const validLang: 'es' | 'en' | 'pt' = lang === 'pt' ? 'pt' : lang === 'en' ? 'en' : 'es';
+
+  // Function to build pre-filled wa.me URL for prospective clients
+  const getWhatsAppSupportUrl = (supportType?: string) => {
+    const cleanPhone = ADMIN_PHONE_NUMBER.replace(/[^0-9]/g, '');
+    let customSubject = '';
+    
+    if (supportType === 'roi_audit') {
+      customSubject = validLang === 'en' 
+        ? 'Financial ROI & CAPEX/OPEX Amortization Audit (On-Premises vs Cloud)' 
+        : validLang === 'pt' 
+        ? 'Auditoria de ROI Financeiro e Amortização CAPEX/OPEX (On-Premises vs Cloud)'
+        : 'Auditoría de ROI Financiero y Amortización CAPEX/OPEX (On-Premises vs Cloud)';
+    } else if (supportType === 'hardware_procurement') {
+      customSubject = validLang === 'en'
+        ? 'Enterprise GPU Procurement & Server Sizing (4x L40S / H100)'
+        : validLang === 'pt'
+        ? 'Aquisição de GPUs Corporativas e Dimensionamento de Servidores (4x L40S / H100)'
+        : 'Adquisición de GPUs Empresariales y Dimensionamiento de Servidores (4x L40S / H100)';
+    } else if (supportType === 'multi_agent_rag') {
+      customSubject = validLang === 'en'
+        ? 'Multi-Agent Autonomous Orchestration & Local RAG Architecture'
+        : validLang === 'pt'
+        ? 'Orquestração Autônoma Multi-Agente e Arquitetura RAG Local'
+        : 'Orquestación Autónoma Multi-Agente y Arquitectura RAG Local';
+    } else {
+      customSubject = validLang === 'en'
+        ? 'Executive Advisory & Custom AI Infrastructure Deployment'
+        : validLang === 'pt'
+        ? 'Assessoria Executiva e Implantação de Infraestrutura de IA Personalizada'
+        : 'Asesoría Ejecutiva e Implementación de Infraestructura de IA a Medida';
+    }
+
+    let message = '';
+    if (validLang === 'en') {
+      message = `Hello Ing. Jorge Huerta & Kuboxhubia Team,\n\nI am contacting you from the Kbox Platform regarding *${customSubject}*.\n\nOur organization is evaluating an AI infrastructure transition and would like to request executive support, schedule a technical consultation, and discuss custom deployment specifications.\n\nLooking forward to your response.`;
+    } else if (validLang === 'pt') {
+      message = `Olá Ing. Jorge Huerta e Equipe Kuboxhubia,\n\nEstou entrando em contato através da Plataforma Kbox sobre *${customSubject}*.\n\nNossa organização está avaliando a transição para infraestrutura de IA e gostaríamos de solicitar suporte executivo, agendar uma consultoria técnica e discutir especificações de implantação.\n\nAguardo seu retorno.`;
+    } else {
+      message = `Hola Ing. Jorge Huerta y Equipo Kuboxhubia,\n\nMe pongo en contacto a través de la Plataforma Kbox respecto a *${customSubject}*.\n\nNuestra organización está evaluando la transición hacia infraestructura de IA On-Premises/Híbrida y deseamos solicitar soporte ejecutivo, agendar una sesión de consultoría técnica y revisar especificaciones a la medida.\n\nQuedo atento a su respuesta.`;
+    }
+
+    return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+  };
 
   if (!isOpen) return null;
 
@@ -81,6 +146,7 @@ export const CommunityBridgeModal: React.FC<CommunityBridgeModalProps> = ({
     setInboundQueries(communityBridgeService.getInboundQueries());
     setSchedules(communityBridgeService.getSchedules());
     setTelemetry(communityBridgeService.getTelemetry());
+    setWelcomeConfig(communityBridgeService.getWelcomeConfig());
   };
 
   const handleCopyMessage = (id: string, text: string) => {
@@ -88,6 +154,85 @@ export const CommunityBridgeModal: React.FC<CommunityBridgeModalProps> = ({
     navigator.clipboard.writeText(text);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2500);
+  };
+
+  // Welcome Message Automation Handlers
+  const handleSaveWelcomeConfig = () => {
+    audioSynth.playTone(880, 0.15, 'sine', 0.1);
+    const updated = communityBridgeService.updateWelcomeConfig({
+      template: welcomeTemplateInput,
+      enabled: welcomeConfig.enabled,
+      autoCopyOnJoin: welcomeConfig.autoCopyOnJoin
+    });
+    setWelcomeConfig(updated);
+    setWelcomeSavedToast(true);
+    setTimeout(() => setWelcomeSavedToast(false), 3000);
+  };
+
+  const handleApplyWelcomePreset = (presetId: string) => {
+    audioSynth.playClickSound();
+    const updated = communityBridgeService.applyWelcomePreset(presetId);
+    setWelcomeConfig(updated);
+    setWelcomeTemplateInput(updated.template);
+    setWelcomeNotification(`Plantilla aplicada: ${WELCOME_PRESETS.find(p => p.id === presetId)?.name}`);
+    setTimeout(() => setWelcomeNotification(null), 3500);
+  };
+
+  const handleResetWelcomeToDefault = () => {
+    audioSynth.playClickSound();
+    const updated = communityBridgeService.resetWelcomeConfig();
+    setWelcomeConfig(updated);
+    setWelcomeTemplateInput(updated.template);
+    setWelcomeNotification('Configuración de bienvenida restaurada al valor predeterminado');
+    setTimeout(() => setWelcomeNotification(null), 3500);
+  };
+
+  const handleInsertVariable = (varKey: string) => {
+    audioSynth.playClickSound();
+    if (textareaRef.current) {
+      const textarea = textareaRef.current;
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const currentText = welcomeTemplateInput;
+      const newText = currentText.substring(0, start) + varKey + currentText.substring(end);
+      setWelcomeTemplateInput(newText);
+      setTimeout(() => {
+        textarea.focus();
+        textarea.setSelectionRange(start + varKey.length, start + varKey.length);
+      }, 50);
+    } else {
+      setWelcomeTemplateInput(prev => `${prev} ${varKey}`);
+    }
+  };
+
+  const handleCopyWelcomePreview = () => {
+    audioSynth.playClickSound();
+    const formatted = communityBridgeService.formatWelcomeMessage(welcomeTemplateInput, {
+      '{userName}': previewUserName || 'Nuevo Miembro'
+    });
+    navigator.clipboard.writeText(formatted);
+    setWelcomeNotification('📋 ¡Mensaje de bienvenida formateado copiado al portapapeles! Listo para pegar en WhatsApp.');
+    setTimeout(() => setWelcomeNotification(null), 4000);
+  };
+
+  const handleSimulateUserJoin = () => {
+    audioSynth.playAlertChime();
+    const res = communityBridgeService.handleUserJoinWhatsApp(previewUserName);
+    refreshAll();
+    setWelcomeNotification(
+      `🎉 ¡Simulación exitosa! Nuevo usuario (${previewUserName || 'Nuevo Miembro'}) ingresó vía enlace. Mensaje de bienvenida copiado automáticamente al portapapeles.`
+    );
+    setTimeout(() => setWelcomeNotification(null), 5000);
+  };
+
+  const handleGroupJoinClick = () => {
+    audioSynth.playClickSound();
+    const res = communityBridgeService.handleUserJoinWhatsApp();
+    refreshAll();
+    if (res.copiedToClipboard) {
+      setWelcomeNotification('📋 Mensaje de bienvenida oficial copiado automáticamente al portapapeles para recibir a nuevos miembros.');
+      setTimeout(() => setWelcomeNotification(null), 4000);
+    }
   };
 
   const handleDispatchBroadcast = (id: string) => {
@@ -195,14 +340,40 @@ export const CommunityBridgeModal: React.FC<CommunityBridgeModalProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Direct Launch Support Button for Prospective Clients */}
+            <a
+              id="btn-launch-whatsapp-support"
+              href={getWhatsAppSupportUrl(selectedSupportTopic)}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => audioSynth.playClickSound()}
+              className="px-3.5 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-black flex items-center gap-1.5 transition-all shadow-lg hover:scale-[1.02] active:scale-[0.98] border border-emerald-300/40"
+              title={
+                validLang === 'en'
+                  ? 'Launch WhatsApp Support with pre-filled prospective client advisory inquiry'
+                  : validLang === 'pt'
+                  ? 'Iniciar Suporte WhatsApp com mensagem pré-configurada para clientes potenciais'
+                  : 'Lanzar Soporte WhatsApp con mensaje preconfigurado para clientes potenciales'
+              }
+            >
+              <Headphones className="w-4 h-4 text-black animate-bounce" />
+              <span className="font-extrabold tracking-tight">
+                {validLang === 'en' ? 'Launch Support' : validLang === 'pt' ? 'Iniciar Suporte' : 'Lanzar Soporte'}
+              </span>
+            </a>
+
             <a
               href={WHATSAPP_DIRECT_LINK}
               target="_blank"
               rel="noopener noreferrer"
-              className="px-3 py-2 rounded-xl text-xs font-bold bg-emerald-500 hover:bg-emerald-400 text-black flex items-center gap-1.5 transition-all shadow-md"
+              onClick={handleGroupJoinClick}
+              className="px-3 py-2 rounded-xl text-xs font-bold bg-[#1B1B22] hover:bg-[#25252D] text-emerald-300 border border-emerald-500/40 flex items-center gap-1.5 transition-all shadow-sm"
+              title="Abrir grupo oficial Kuboxhubia-Mionicagran IA (Copia automáticamente el mensaje de bienvenida al portapapeles)"
             >
-              <MessageCircle className="w-4 h-4" />
-              <span>Abrir WhatsApp</span>
+              <MessageCircle className="w-4 h-4 text-emerald-400" />
+              <span className="hidden sm:inline">
+                {validLang === 'en' ? 'Open Group' : 'Grupo WhatsApp'}
+              </span>
             </a>
 
             <button
@@ -214,6 +385,22 @@ export const CommunityBridgeModal: React.FC<CommunityBridgeModalProps> = ({
           </div>
         </div>
 
+        {/* Global Toast Notification Banner for Clipboard Events */}
+        {welcomeNotification && (
+          <div className="mx-6 mt-3 p-3.5 rounded-2xl bg-gradient-to-r from-emerald-950 via-[#0E2419] to-teal-950 border border-emerald-400/80 text-emerald-100 text-xs flex items-center justify-between shadow-2xl animate-fade-in gap-3">
+            <div className="flex items-center gap-2.5">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+              <span className="font-semibold text-xs leading-tight">{welcomeNotification}</span>
+            </div>
+            <button
+              onClick={() => setWelcomeNotification(null)}
+              className="p-1 rounded-lg text-emerald-300 hover:text-white hover:bg-emerald-900/50 transition-colors shrink-0"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
         {/* Live Telemetry Bar */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 p-4 bg-[#09090C] border-b border-[#1E1E24] text-xs">
           <div className="p-3 rounded-xl bg-[#111116] border border-[#222228] flex items-center justify-between">
@@ -222,6 +409,14 @@ export const CommunityBridgeModal: React.FC<CommunityBridgeModalProps> = ({
               <span className="text-base font-mono font-bold text-emerald-400">{telemetry.totalBroadcastsSent}</span>
             </div>
             <Send className="w-4 h-4 text-emerald-500/60" />
+          </div>
+
+          <div className="p-3 rounded-xl bg-[#111116] border border-[#222228] flex items-center justify-between">
+            <div>
+              <span className="text-[10px] text-gray-400 uppercase font-mono block">Bienvenidas Copiadas</span>
+              <span className="text-base font-mono font-bold text-emerald-300">{welcomeConfig.welcomeCount || 0}</span>
+            </div>
+            <UserCheck className="w-4 h-4 text-emerald-400" />
           </div>
 
           <div className="p-3 rounded-xl bg-[#111116] border border-[#222228] flex items-center justify-between">
@@ -239,14 +434,6 @@ export const CommunityBridgeModal: React.FC<CommunityBridgeModalProps> = ({
             </div>
             <Database className="w-4 h-4 text-amber-500/60" />
           </div>
-
-          <div className="p-3 rounded-xl bg-[#111116] border border-[#222228] flex items-center justify-between">
-            <div>
-              <span className="text-[10px] text-gray-400 uppercase font-mono block">Salud del Puente</span>
-              <span className="text-base font-mono font-bold text-purple-400">{telemetry.communityHealthScore}%</span>
-            </div>
-            <Zap className="w-4 h-4 text-purple-500/60" />
-          </div>
         </div>
 
         {/* Tab Navigation */}
@@ -261,6 +448,21 @@ export const CommunityBridgeModal: React.FC<CommunityBridgeModalProps> = ({
           >
             <Send className="w-4 h-4" />
             <span>📡 Despacho de Tendencias ({broadcasts.length})</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('welcome_config')}
+            className={`py-3.5 px-4 text-xs font-bold border-b-2 flex items-center gap-2 transition-all whitespace-nowrap ${
+              activeTab === 'welcome_config'
+                ? 'border-emerald-400 text-emerald-300 bg-emerald-500/5'
+                : 'border-transparent text-gray-400 hover:text-gray-200'
+            }`}
+          >
+            <UserCheck className="w-4 h-4 text-emerald-400" />
+            <span>👋 Bienvenida Automática</span>
+            <span className="px-1.5 py-0.2 rounded-full text-[9px] font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+              Auto-Copia
+            </span>
           </button>
 
           <button
@@ -318,6 +520,65 @@ export const CommunityBridgeModal: React.FC<CommunityBridgeModalProps> = ({
                     <p className="text-xs text-gray-400 mt-0.5">
                       Crea boletines formateados con markdown oficial de WhatsApp listos para distribución masiva.
                     </p>
+                  </div>
+                </div>
+
+                {/* Prospective Client Support & Advisory Launcher Card */}
+                <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-950/40 via-[#121217] to-teal-950/40 border border-emerald-500/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Headphones className="w-4 h-4 text-emerald-400" />
+                      <h4 className="text-xs font-bold text-white uppercase tracking-wider">
+                        {validLang === 'en'
+                          ? 'Direct Client Support & Advisory Funnel'
+                          : validLang === 'pt'
+                          ? 'Canal de Suporte Executivo e Consultoria a Clientes'
+                          : 'Canal de Soporte Directo y Consultoría a Clientes'}
+                      </h4>
+                      <span className="px-2 py-0.2 rounded-full text-[9px] font-mono bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">
+                        wa.me API Direct
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-gray-300">
+                      {validLang === 'en'
+                        ? 'Connects prospective clients with Ing. Jorge Huerta via WhatsApp with customized technical context.'
+                        : validLang === 'pt'
+                        ? 'Conecta clientes potenciais diretamente com o Ing. Jorge Huerta via WhatsApp com contexto técnico pré-carregado.'
+                        : 'Conecta a prospectos y directivos con el Ing. Jorge Huerta vía WhatsApp con contexto técnico pre-cargado.'}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2.5 w-full sm:w-auto">
+                    <select
+                      value={selectedSupportTopic}
+                      onChange={(e) => setSelectedSupportTopic(e.target.value)}
+                      className="bg-[#0A0A0E] border border-[#2B2B33] rounded-xl px-3 py-2 text-xs text-emerald-300 font-mono focus:outline-none focus:border-emerald-500"
+                    >
+                      <option value="cluster_sizing">
+                        {validLang === 'en' ? 'Cluster Sizing & SVR' : validLang === 'pt' ? 'Dimensionamento de Clúster' : 'Dimensionamiento Clúster'}
+                      </option>
+                      <option value="roi_audit">
+                        {validLang === 'en' ? 'CFO ROI & Amortization' : validLang === 'pt' ? 'Auditoria ROI CFO' : 'Auditoría ROI CFO'}
+                      </option>
+                      <option value="hardware_procurement">
+                        {validLang === 'en' ? '4x L40S / H100 GPU Spec' : validLang === 'pt' ? 'Hardware GPUs L40S' : 'Hardware GPUs L40S'}
+                      </option>
+                      <option value="multi_agent_rag">
+                        {validLang === 'en' ? 'Multi-Agent RAG Stack' : validLang === 'pt' ? 'Stack Multi-Agente' : 'Stack Multi-Agente'}
+                      </option>
+                    </select>
+
+                    <a
+                      href={getWhatsAppSupportUrl(selectedSupportTopic)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => audioSynth.playClickSound()}
+                      className="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-500 hover:bg-emerald-400 text-black flex items-center gap-1.5 transition-all shadow-md shrink-0 font-mono"
+                    >
+                      <Headphones className="w-3.5 h-3.5" />
+                      <span>{validLang === 'en' ? 'Launch Support' : 'Lanzar Soporte'}</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </a>
                   </div>
                 </div>
 
@@ -471,7 +732,343 @@ export const CommunityBridgeModal: React.FC<CommunityBridgeModalProps> = ({
             </div>
           )}
 
-          {/* TAB 2: INBOUND QUERY PARSER & KNOWLEDGE FUNNEL */}
+          {/* TAB 2: AUTOMATED WELCOME MESSAGE CONFIGURATION */}
+          {activeTab === 'welcome_config' && (
+            <div className="space-y-6 animate-fade-in">
+              
+              {/* Header Overview Card */}
+              <div className="p-5 sm:p-6 rounded-3xl bg-gradient-to-br from-[#0c1f17] via-[#0D1512] to-[#0A0D10] border border-emerald-500/40 space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                      <UserCheck className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-bold text-white flex items-center gap-2">
+                        Configuración de Mensaje de Bienvenida Automático
+                      </h3>
+                      <p className="text-xs text-emerald-200/80 mt-0.5">
+                        Define el mensaje oficial que se copiará al portapapeles en cuanto un nuevo usuario o prospecto haga clic en unirse al grupo de WhatsApp mediante nuestros enlaces.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <span className="px-3 py-1 rounded-full text-xs font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                      Auto-Copia al Portapapeles: {welcomeConfig.autoCopyOnJoin ? 'ACTIVA' : 'PAUSADA'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-[#1C2C24] text-xs">
+                  <div className="p-2.5 rounded-xl bg-[#09090C]/60 border border-[#1E2E26] flex items-center justify-between">
+                    <span className="text-gray-400">Total Bienvenidas Auto-Copiadas:</span>
+                    <strong className="font-mono text-emerald-300 text-sm">{welcomeConfig.welcomeCount || 0}</strong>
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-[#09090C]/60 border border-[#1E2E26] flex items-center justify-between">
+                    <span className="text-gray-400">Grupo Destino:</span>
+                    <strong className="text-white text-xs truncate max-w-[140px]">{WHATSAPP_GROUP_NAME}</strong>
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-[#09090C]/60 border border-[#1E2E26] flex items-center justify-between">
+                    <span className="text-gray-400">Última Actualización:</span>
+                    <strong className="font-mono text-gray-300 text-[11px]">{welcomeConfig.lastUpdated || '2026-08-20'}</strong>
+                  </div>
+                </div>
+              </div>
+
+              {/* Template Presets Selector */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                    Plantillas Preconfiguradas de Alto Impacto
+                  </h4>
+                  <span className="text-[11px] text-gray-500">
+                    Haz clic en una plantilla para cargarla en el editor
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                  {WELCOME_PRESETS.map((preset) => {
+                    const isSelected = welcomeConfig.selectedPresetId === preset.id;
+                    return (
+                      <div
+                        key={preset.id}
+                        className={`p-4 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between space-y-3 ${
+                          isSelected
+                            ? 'bg-[#11231B] border-emerald-400 shadow-lg'
+                            : 'bg-[#0E0E12] border-[#222228] hover:border-[#353540] hover:bg-[#131318]'
+                        }`}
+                        onClick={() => handleApplyWelcomePreset(preset.id)}
+                      >
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between">
+                            <span className="px-2 py-0.5 rounded text-[9px] font-mono font-bold uppercase bg-[#18181F] text-amber-300 border border-[#2B2B35]">
+                              {preset.category}
+                            </span>
+                            {isSelected && (
+                              <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-400 font-mono">
+                                <Check className="w-3 h-3" />
+                                ACTIVA
+                              </span>
+                            )}
+                          </div>
+                          <h5 className="text-xs font-bold text-white leading-snug">
+                            {preset.name}
+                          </h5>
+                          <p className="text-[11px] text-gray-400 line-clamp-2">
+                            {preset.description}
+                          </p>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleApplyWelcomePreset(preset.id);
+                          }}
+                          className={`w-full py-1.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1 transition-all ${
+                            isSelected
+                              ? 'bg-emerald-500 text-black'
+                              : 'bg-[#1A1A22] text-gray-300 hover:bg-[#252530] hover:text-white'
+                          }`}
+                        >
+                          <span>{isSelected ? 'Plantilla en Uso' : 'Cargar Plantilla'}</span>
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Dynamic Variables Insertion Bar */}
+              <div className="p-4 rounded-2xl bg-[#0D0D10] border border-[#232328] space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-gray-300 flex items-center gap-1.5">
+                    <Sliders className="w-3.5 h-3.5 text-cyan-400" />
+                    Insertar Variables Dinámicas (Haz clic para agregar al mensaje):
+                  </span>
+                  <span className="text-[10px] text-gray-500 font-mono">Reemplazo en tiempo real</span>
+                </div>
+
+                <div className="flex flex-wrap gap-2 pt-1">
+                  {[
+                    { key: '{userName}', label: 'Nombre del Miembro / Prospecto', color: 'text-emerald-300 border-emerald-500/30 bg-emerald-500/10' },
+                    { key: '{groupName}', label: 'Nombre del Grupo WhatsApp', color: 'text-cyan-300 border-cyan-500/30 bg-cyan-500/10' },
+                    { key: '{adminName}', label: 'Nombre del Admin (Ing. Jorge Huerta)', color: 'text-amber-300 border-amber-500/30 bg-amber-500/10' },
+                    { key: '{adminPhone}', label: 'Teléfono Admin (+58 412-3931011)', color: 'text-purple-300 border-purple-500/30 bg-purple-500/10' },
+                    { key: '{platformUrl}', label: 'URL Pública de la Plataforma', color: 'text-blue-300 border-blue-500/30 bg-blue-500/10' },
+                    { key: '{date}', label: 'Fecha Actual', color: 'text-rose-300 border-rose-500/30 bg-rose-500/10' }
+                  ].map((v) => (
+                    <button
+                      key={v.key}
+                      type="button"
+                      onClick={() => handleInsertVariable(v.key)}
+                      className={`px-2.5 py-1 rounded-xl text-xs font-mono font-semibold border flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95 ${v.color}`}
+                      title={`Insertar ${v.label}`}
+                    >
+                      <span>+</span>
+                      <strong>{v.key}</strong>
+                      <span className="text-[10px] opacity-75 hidden sm:inline">({v.label})</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Main Dual Column: Editor & Live WhatsApp Preview */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                {/* Left Column: Form & Configuration (7 cols) */}
+                <div className="lg:col-span-7 space-y-4">
+                  <div className="p-5 rounded-3xl bg-[#0D0D10] border border-[#232328] space-y-4 shadow-xl">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold text-white flex items-center gap-2">
+                        <FileText className="w-4 h-4 text-emerald-400" />
+                        Editor de Mensaje de Bienvenida (Formato Markdown WhatsApp)
+                      </label>
+                      <span className="text-[10px] font-mono text-gray-400">
+                        {welcomeTemplateInput.length} caracteres • {welcomeTemplateInput.split('\n').length} líneas
+                      </span>
+                    </div>
+
+                    <textarea
+                      ref={textareaRef}
+                      rows={14}
+                      value={welcomeTemplateInput}
+                      onChange={(e) => setWelcomeTemplateInput(e.target.value)}
+                      placeholder="Escribe el mensaje de bienvenida..."
+                      className="w-full bg-[#131317] border border-[#2B2B33] rounded-2xl p-4 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500 font-mono leading-relaxed shadow-inner resize-y"
+                    />
+
+                    {/* Controls & Persistence */}
+                    <div className="space-y-3 pt-2 border-t border-[#1C1C22]">
+                      <div className="flex items-center justify-between p-3 rounded-xl bg-[#141419] border border-[#232328]">
+                        <div className="flex items-center gap-2.5">
+                          <input
+                            type="checkbox"
+                            id="chk-auto-copy-join"
+                            checked={welcomeConfig.autoCopyOnJoin}
+                            onChange={(e) => {
+                              const updated = communityBridgeService.updateWelcomeConfig({
+                                autoCopyOnJoin: e.target.checked
+                              });
+                              setWelcomeConfig(updated);
+                            }}
+                            className="w-4 h-4 rounded text-emerald-500 focus:ring-emerald-400 border-gray-600 bg-gray-700 cursor-pointer"
+                          />
+                          <label htmlFor="chk-auto-copy-join" className="text-xs text-gray-200 font-semibold cursor-pointer">
+                            Copiar automáticamente al portapapeles cuando un usuario haga clic en unirse al grupo desde la web
+                          </label>
+                        </div>
+                      </div>
+
+                      <div className="p-3 rounded-xl bg-[#141419] border border-[#232328] space-y-1.5">
+                        <label className="text-[11px] font-bold text-gray-300 flex items-center gap-1.5">
+                          <Smile className="w-3.5 h-3.5 text-amber-400" />
+                          Nombre o Empresa para Prueba de Previsualización:
+                        </label>
+                        <input
+                          type="text"
+                          value={previewUserName}
+                          onChange={(e) => setPreviewUserName(e.target.value)}
+                          placeholder="Ej: Ing. Carlos Mendoza (CTO FibraNet)"
+                          className="w-full bg-[#0D0D10] border border-[#2B2B30] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500 font-mono"
+                        />
+                      </div>
+
+                      <div className="flex flex-wrap items-center justify-between gap-2 pt-2">
+                        <button
+                          type="button"
+                          onClick={handleResetWelcomeToDefault}
+                          className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-[#1C1C22] hover:bg-[#25252D] text-gray-300 flex items-center gap-1.5 transition-colors border border-[#2C2C34]"
+                        >
+                          <RotateCcw className="w-3.5 h-3.5" />
+                          <span>Restablecer Predeterminado</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={handleSaveWelcomeConfig}
+                          className="px-5 py-2.5 rounded-xl text-xs font-bold bg-emerald-500 hover:bg-emerald-400 text-black flex items-center gap-2 transition-all shadow-md active:scale-95"
+                        >
+                          {welcomeSavedToast ? (
+                            <>
+                              <CheckCircle2 className="w-4 h-4 text-black" />
+                              <span>¡Configuración Guardada!</span>
+                            </>
+                          ) : (
+                            <>
+                              <Save className="w-4 h-4 text-black" />
+                              <span>Guardar Configuración</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+
+                {/* Right Column: WhatsApp Real-Time Visual Bubble (5 cols) */}
+                <div className="lg:col-span-5 space-y-4">
+                  <div className="p-5 rounded-3xl bg-[#0D0D10] border border-emerald-500/30 space-y-3.5 shadow-xl flex flex-col justify-between">
+                    
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between pb-2 border-b border-[#232328]">
+                        <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                          <MessageCircle className="w-4 h-4 text-emerald-400" />
+                          Vista Previa en WhatsApp (Burbuja Real)
+                        </span>
+                        <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                          En Vivo
+                        </span>
+                      </div>
+
+                      {/* WhatsApp Window Container */}
+                      <div className="rounded-2xl overflow-hidden border border-[#232D36] bg-[#0B141A] shadow-2xl">
+                        
+                        {/* WhatsApp Top Chat Header */}
+                        <div className="bg-[#1F2C34] p-3 flex items-center gap-2.5 border-b border-[#232D36]">
+                          <div className="w-8 h-8 rounded-full bg-emerald-700 flex items-center justify-center text-white font-bold text-xs shrink-0">
+                            KH
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <h6 className="text-xs font-bold text-white truncate">
+                              {WHATSAPP_GROUP_NAME}
+                            </h6>
+                            <p className="text-[10px] text-gray-400 truncate">
+                              Ing. Jorge Huerta, Tú y 184 miembros
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* WhatsApp Chat Canvas Background */}
+                        <div className="p-3.5 bg-[#0B141A] min-h-[300px] flex flex-col justify-end space-y-2">
+                          
+                          {/* System Notification Bubble */}
+                          <div className="self-center my-1 px-3 py-1 rounded-lg bg-[#182229] text-gray-300 text-[10px] text-center font-mono border border-[#222E35]">
+                            🟢 {previewUserName || 'Nuevo Miembro'} se unió usando el enlace de invitación
+                          </div>
+
+                          {/* WhatsApp Welcome Message Bubble */}
+                          <div className="self-end max-w-[95%] rounded-2xl rounded-tr-none bg-[#005C4B] p-3 text-xs text-white space-y-2 shadow-md border border-[#02705B]">
+                            <div className="flex items-center justify-between gap-2 border-b border-emerald-600/50 pb-1">
+                              <span className="text-[11px] font-bold text-[#25D366]">
+                                Admin • Ing. Jorge Huerta
+                              </span>
+                              <span className="text-[9px] font-mono text-emerald-200">
+                                {ADMIN_PHONE_NUMBER}
+                              </span>
+                            </div>
+
+                            <div className="text-[11.5px] leading-relaxed whitespace-pre-wrap font-sans text-gray-100 selection:bg-emerald-300 selection:text-black">
+                              {communityBridgeService.formatWelcomeMessage(welcomeTemplateInput, {
+                                '{userName}': previewUserName || 'Nuevo Miembro'
+                              })}
+                            </div>
+
+                            <div className="flex items-center justify-end gap-1 pt-1 text-[10px] text-emerald-200/80 font-mono">
+                              <span>10:42 AM</span>
+                              <span className="text-[#53bdeb] font-bold tracking-tighter">✓✓</span>
+                            </div>
+                          </div>
+
+                        </div>
+                      </div>
+
+                    </div>
+
+                    {/* Interactive Sandbox Test Actions */}
+                    <div className="space-y-2.5 pt-2">
+                      <button
+                        type="button"
+                        onClick={handleCopyWelcomePreview}
+                        className="w-full py-2.5 px-4 rounded-xl text-xs font-bold bg-[#1B1B22] hover:bg-[#252530] text-emerald-300 border border-emerald-500/40 flex items-center justify-center gap-2 transition-all shadow-md"
+                      >
+                        <Copy className="w-4 h-4" />
+                        <span>Copiar Mensaje Formateado al Portapapeles</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={handleSimulateUserJoin}
+                        className="w-full py-2.5 px-4 rounded-xl text-xs font-bold bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-black flex items-center justify-center gap-2 transition-all shadow-lg active:scale-98"
+                      >
+                        <UserPlus className="w-4 h-4" />
+                        <span>🧪 Simular Entrada de Usuario & Auto-Copia</span>
+                      </button>
+                    </div>
+
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
+          )}
+
+          {/* TAB 3: INBOUND QUERY PARSER & KNOWLEDGE FUNNEL */}
           {activeTab === 'inbound' && (
             <div className="space-y-6">
               

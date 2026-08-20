@@ -14,7 +14,13 @@ import {
   FlaskConical,
   Cpu,
   Layers,
-  ArrowRight
+  ArrowRight,
+  Copy,
+  Check,
+  ExternalLink,
+  MessageCircle,
+  Linkedin,
+  Twitter
 } from 'lucide-react';
 import { Language, TrendPlatform, TrendSector, TrendSignal, SlideData } from '../types';
 import { TREND_SIGNALS } from '../data/slidesData';
@@ -26,19 +32,27 @@ interface TrendRadarModalProps {
   onClose: () => void;
   lang: Language;
   onAddNewSlide: (newSlide: SlideData) => void;
+  currentSlide?: SlideData;
 }
 
 export const TrendRadarModal: React.FC<TrendRadarModalProps> = ({
   isOpen,
   onClose,
   lang,
-  onAddNewSlide
+  onAddNewSlide,
+  currentSlide
 }) => {
   const [selectedSector, setSelectedSector] = useState<TrendSector | 'all'>('all');
   const [selectedPlatform, setSelectedPlatform] = useState<TrendPlatform | 'all'>('all');
   const [activeSignal, setActiveSignal] = useState<TrendSignal>(TREND_SIGNALS[0]);
   const [customPrompt, setCustomPrompt] = useState<string>(TREND_SIGNALS[0].samplePrompt[lang]);
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
+
+  // Social Share Drawer / State
+  const [isSocialShareOpen, setIsSocialShareOpen] = useState<boolean>(false);
+  const [shareSource, setShareSource] = useState<'current_slide' | 'active_trend'>('current_slide');
+  const [socialTone, setSocialTone] = useState<'executive' | 'technical' | 'viral'>('executive');
+  const [copiedSuccess, setCopiedSuccess] = useState<boolean>(false);
 
   const t = UI_TRANSLATIONS[lang];
 
@@ -54,6 +68,129 @@ export const TrendRadarModal: React.FC<TrendRadarModalProps> = ({
     audioSynth.playClickSound();
     setActiveSignal(signal);
     setCustomPrompt(signal.samplePrompt[lang]);
+  };
+
+  // Pre-formatted promotional text generation based on topic
+  const generatePromotionalText = (): string => {
+    const isSlide = shareSource === 'current_slide' && currentSlide;
+    const title = isSlide ? currentSlide.title : activeSignal.title;
+    const subtitle = isSlide ? (currentSlide.subtitle || currentSlide.takeaway) : activeSignal.summary[lang];
+    const category = isSlide ? currentSlide.category : activeSignal.sector.toUpperCase();
+    const appUrl = window.location.origin || 'https://kuboxhubia.ai';
+
+    if (socialTone === 'executive') {
+      if (lang === 'en') {
+        return `🚀 Strategic AI & DeepTech Insight | ${title}\n\n` +
+          `Key Industry Observation:\n"${subtitle}"\n\n` +
+          `📊 Strategic Focus: ${category}\n` +
+          `💡 Autonomous orchestration and local hardware compute deliver up to 4.5x ROI while maintaining 100% data sovereignty.\n\n` +
+          `👉 Explore the live interactive briefing & architectural models:\n${appUrl}\n\n` +
+          `#AIInfrastructure #EnterpriseAI #DeepTech #CFO #Innovation #OnPremisesAI #Kuboxhubia`;
+      } else if (lang === 'pt') {
+        return `🚀 Insight Estratégico em IA & DeepTech | ${title}\n\n` +
+          `Observação Executiva:\n"${subtitle}"\n\n` +
+          `📊 Foco Estratégico: ${category}\n` +
+          `💡 A orquestração autônoma e computação local garantem até 4.5x de ROI com 100% de soberania dos dados.\n\n` +
+          `👉 Explore a apresentação executiva interativa:\n${appUrl}\n\n` +
+          `#InteligenciaArtificial #DeepTech #Inovacao #InfraestruturaIA #Kuboxhubia #Lideranca`;
+      } else {
+        return `🚀 Perspectiva Estratégica de IA & DeepTech | ${title}\n\n` +
+          `Insight Clave del Mercado:\n"${subtitle}"\n\n` +
+          `📊 Enfoque: ${category}\n` +
+          `💡 La soberanía computacional On-Premises y la orquestación multi-agente reducen costos operativos hasta un 68% garantizando máxima privacidad.\n\n` +
+          `👉 Conoce la plataforma interactiva y simula el ROI en vivo:\n${appUrl}\n\n` +
+          `#InteligenciaArtificial #AIInfrastructure #DeepTech #SoberaniaDigital #Kuboxhubia #CSuite #TransformacionDigital`;
+      }
+    } else if (socialTone === 'technical') {
+      if (lang === 'en') {
+        return `⚡ Tech Deep-Dive: ${title}\n\n` +
+          `🔬 Core Thesis: ${subtitle}\n\n` +
+          `⚙️ Architecture Highlights:\n` +
+          `• Local Multi-Agent RAG with quantized SLM/LLM inference\n` +
+          `• Zero latency data-pipeline and custom vector database indexing\n` +
+          `• Hardware acceleration on high-throughput GPU clusters\n\n` +
+          `🔗 Full interactive architecture specs:\n${appUrl}\n\n` +
+          `#MachineLearning #LLMOps #GPUComputing #LocalAI #SystemArchitecture #TechTrends`;
+      } else {
+        return `⚡ Análisis Técnico de Arquitectura: ${title}\n\n` +
+          `🔬 Tesis Principal: ${subtitle}\n\n` +
+          `⚙️ Puntos Clave de Implementación:\n` +
+          `• Orquestación Multi-Agente RAG con inferencia local optimizada\n` +
+          `• Cero latencia y base de vectores dedicada sin fuga de datos\n` +
+          `• Clústeres acelerados de GPU (L40S / H100) con amortización transparente\n\n` +
+          `🔗 Arquitectura técnica e interactiva en:\n${appUrl}\n\n` +
+          `#MachineLearning #LLMOps #ArquitecturaIA #GPU #DeepTech #Kuboxhubia`;
+      }
+    } else {
+      // Viral / Social
+      if (lang === 'en') {
+        return `🔥 Why ${title} is shifting the entire AI landscape right now:\n\n` +
+          `"${subtitle}"\n\n` +
+          `The future isn't renting compute forever—it's owning your intelligence stack. 💡\n\n` +
+          `Check out the live interactive dashboard: ${appUrl}\n\n` +
+          `#FutureOfAI #TrendingTech #ArtificialIntelligence #Startups #TechInnovation`;
+      } else {
+        return `🔥 Por qué "${title}" está transformando el panorama de la IA ahora mismo:\n\n` +
+          `"${subtitle}"\n\n` +
+          `El verdadero cambio no es rentar APIs a ciegas: es ser dueño de tu propia soberanía computacional. 💡\n\n` +
+          `Revisa la plataforma interactiva en vivo aquí: ${appUrl}\n\n` +
+          `#TendenciasIA #Innovacion #InteligenciaArtificial #TechNews #Kuboxhubia`;
+      }
+    }
+  };
+
+  const handleCopyToClipboard = async () => {
+    audioSynth.playClickSound();
+    const text = generatePromotionalText();
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+      }
+      setCopiedSuccess(true);
+      setTimeout(() => setCopiedSuccess(false), 2500);
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleShareNative = async () => {
+    audioSynth.playClickSound();
+    const text = generatePromotionalText();
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: currentSlide ? currentSlide.title : activeSignal.title,
+          text: text,
+          url: window.location.origin
+        });
+      } catch {
+        // user cancelled or share failed
+      }
+    } else {
+      handleCopyToClipboard();
+    }
+  };
+
+  const getLinkedInShareUrl = () => {
+    const text = generatePromotionalText();
+    return `https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(text)}`;
+  };
+
+  const getTwitterShareUrl = () => {
+    const text = generatePromotionalText();
+    return `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
+  };
+
+  const getWhatsAppShareUrl = () => {
+    const text = generatePromotionalText();
+    return `https://wa.me/?text=${encodeURIComponent(text)}`;
   };
 
   const handleGenerateSlide = async () => {
@@ -154,7 +291,7 @@ Devuelve un título de impacto, subtítulo con métricas financieras o técnicas
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-md overflow-y-auto">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md overflow-y-auto">
         <motion.div
           initial={{ opacity: 0, scale: 0.96, y: 15 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -163,7 +300,7 @@ Devuelve un título de impacto, subtítulo con métricas financieras o técnicas
           className="relative w-full max-w-5xl bg-[#0E0E10] border border-[#27272A] rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]"
         >
           {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-[#27272A] bg-[#141416]">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-[#27272A] bg-[#141416]">
             <div className="flex items-center gap-3">
               <div className="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
                 <Flame className="w-5 h-5" />
@@ -179,24 +316,192 @@ Devuelve un título de impacto, subtítulo con métricas financieras o técnicas
                 </div>
                 <p className="text-xs text-gray-400">
                   {lang === 'es'
-                    ? 'Genera nuevas diapositivas a partir del pulso en tiempo real de 3 sectores clave'
+                    ? 'Genera diapositivas y difunde tendencias de alto impacto en redes profesionales'
                     : lang === 'pt'
-                    ? 'Gere novas lâminas a partir do pulso em tempo real de 3 setores estratégicos'
-                    : 'Generate new presentation slides from live trending signals across 3 strategic sectors'}
+                    ? 'Gere lâminas e compartilhe tendências de alto impacto em redes profissionais'
+                    : 'Generate slides and distribute high-impact trend insights on professional networks'}
                 </p>
               </div>
             </div>
 
-            <button
-              onClick={() => {
-                audioSynth.playClickSound();
-                onClose();
-              }}
-              className="p-2 text-gray-400 hover:text-white rounded-lg hover:bg-[#27272A] transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            <div className="flex items-center gap-2">
+              {/* Share on Social Action Button in Header */}
+              <button
+                id="btn-trend-share-social-toggle"
+                onClick={() => {
+                  audioSynth.playClickSound();
+                  setIsSocialShareOpen(prev => !prev);
+                }}
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all shadow-sm border ${
+                  isSocialShareOpen
+                    ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-purple-400 shadow-purple-900/40'
+                    : 'bg-[#1D1D22] hover:bg-[#282830] text-purple-300 border-purple-500/30 hover:border-purple-400'
+                }`}
+                title="Generar y compartir publicación profesional en redes sociales"
+              >
+                <Share2 className="w-3.5 h-3.5 text-purple-400" />
+                <span>{lang === 'es' ? 'Share on Social' : lang === 'pt' ? 'Compartilhar' : 'Share on Social'}</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  audioSynth.playClickSound();
+                  onClose();
+                }}
+                className="p-2 text-gray-400 hover:text-white rounded-lg hover:bg-[#27272A] transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
           </div>
+
+          {/* Social Share Drawer Panel */}
+          {isSocialShareOpen && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="bg-[#121217] border-b border-purple-500/30 p-4 sm:p-5 flex flex-col gap-4 text-gray-200"
+            >
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <Share2 className="w-4 h-4 text-purple-400" />
+                  <span className="text-xs font-bold text-white uppercase tracking-wider font-mono">
+                    {lang === 'es' ? 'Generador de Publicación Profesional (Copy Social)' : 'Social Media Promo Generator'}
+                  </span>
+                </div>
+
+                {/* Source and Tone Selectors */}
+                <div className="flex flex-wrap items-center gap-2 text-xs">
+                  {/* Topic Source */}
+                  <div className="flex items-center bg-[#1B1B22] p-1 rounded-xl border border-[#2D2D35]">
+                    <button
+                      onClick={() => {
+                        audioSynth.playClickSound();
+                        setShareSource('current_slide');
+                      }}
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${
+                        shareSource === 'current_slide'
+                          ? 'bg-purple-600 text-white'
+                          : 'text-gray-400 hover:text-gray-200'
+                      }`}
+                    >
+                      {lang === 'es' ? 'Diapositiva Actual' : 'Current Slide'}
+                    </button>
+                    <button
+                      onClick={() => {
+                        audioSynth.playClickSound();
+                        setShareSource('active_trend');
+                      }}
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${
+                        shareSource === 'active_trend'
+                          ? 'bg-purple-600 text-white'
+                          : 'text-gray-400 hover:text-gray-200'
+                      }`}
+                    >
+                      {lang === 'es' ? 'Tendencia Seleccionada' : 'Active Trend'}
+                    </button>
+                  </div>
+
+                  {/* Tone Selector */}
+                  <div className="flex items-center bg-[#1B1B22] p-1 rounded-xl border border-[#2D2D35]">
+                    {(['executive', 'technical', 'viral'] as const).map((tone) => (
+                      <button
+                        key={tone}
+                        onClick={() => {
+                          audioSynth.playClickSound();
+                          setSocialTone(tone);
+                        }}
+                        className={`px-2.5 py-1 rounded-lg text-[11px] font-bold capitalize transition-all ${
+                          socialTone === tone
+                            ? 'bg-amber-500 text-black'
+                            : 'text-gray-400 hover:text-gray-200'
+                        }`}
+                      >
+                        {tone === 'executive' ? (lang === 'es' ? 'Ejecutivo' : 'Executive') : tone === 'technical' ? (lang === 'es' ? 'Técnico' : 'Technical') : 'Viral'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Pre-formatted Textarea Preview */}
+              <div className="relative">
+                <textarea
+                  readOnly
+                  value={generatePromotionalText()}
+                  rows={5}
+                  className="w-full bg-[#0A0A0D] border border-purple-500/30 rounded-xl p-3.5 text-xs text-gray-200 font-mono leading-relaxed focus:outline-none select-all"
+                />
+                {copiedSuccess && (
+                  <div className="absolute top-3 right-3 px-3 py-1 bg-emerald-500 text-black text-xs font-bold rounded-lg flex items-center gap-1 shadow-lg animate-fade-in">
+                    <Check className="w-3.5 h-3.5" />
+                    <span>{lang === 'es' ? '¡Copiado al portapapeles!' : 'Copied to clipboard!'}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Action Buttons for 1-Click Sharing */}
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+                <div className="text-[11px] text-gray-400">
+                  {lang === 'es'
+                    ? 'Listo para publicar con hashtags y llamada a la acción optimizada.'
+                    : 'Ready-to-publish post with structured tags and engagement call-to-action.'}
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    onClick={handleCopyToClipboard}
+                    className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[#25252E] hover:bg-[#32323D] text-gray-200 flex items-center gap-1.5 transition-all border border-[#3A3A45]"
+                  >
+                    <Copy className="w-3.5 h-3.5 text-amber-400" />
+                    <span>{copiedSuccess ? (lang === 'es' ? 'Copiado' : 'Copied') : (lang === 'es' ? 'Copiar Texto' : 'Copy Text')}</span>
+                  </button>
+
+                  <a
+                    href={getLinkedInShareUrl()}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => audioSynth.playClickSound()}
+                    className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[#0A66C2] hover:bg-[#084e96] text-white flex items-center gap-1.5 transition-all shadow-sm"
+                  >
+                    <Linkedin className="w-3.5 h-3.5" />
+                    <span>LinkedIn</span>
+                  </a>
+
+                  <a
+                    href={getTwitterShareUrl()}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => audioSynth.playClickSound()}
+                    className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[#1D9BF0] hover:bg-[#187ec4] text-white flex items-center gap-1.5 transition-all shadow-sm"
+                  >
+                    <Twitter className="w-3.5 h-3.5" />
+                    <span>X (Twitter)</span>
+                  </a>
+
+                  <a
+                    href={getWhatsAppShareUrl()}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => audioSynth.playClickSound()}
+                    className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white flex items-center gap-1.5 transition-all shadow-sm"
+                  >
+                    <MessageCircle className="w-3.5 h-3.5" />
+                    <span>WhatsApp</span>
+                  </a>
+
+                  <button
+                    onClick={handleShareNative}
+                    className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-gradient-to-r from-purple-500 to-indigo-500 text-white flex items-center gap-1.5 transition-all shadow-sm hover:scale-105"
+                  >
+                    <Share2 className="w-3.5 h-3.5" />
+                    <span>{lang === 'es' ? 'Compartir' : 'Share'}</span>
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          )}
 
           {/* Sector & Platform Filter Tabs */}
           <div className="p-4 bg-[#111113] border-b border-[#27272A] flex flex-wrap gap-4 items-center justify-between">
@@ -341,8 +646,21 @@ Devuelve un título de impacto, subtítulo con métricas financieras o técnicas
                 </p>
               </div>
 
-              {/* Action Button */}
-              <div className="pt-2 flex justify-end">
+              {/* Action Buttons */}
+              <div className="pt-2 flex flex-wrap items-center justify-between gap-3">
+                <button
+                  id="btn-trend-share-social-footer"
+                  onClick={() => {
+                    audioSynth.playClickSound();
+                    setIsSocialShareOpen(true);
+                    setShareSource('active_trend');
+                  }}
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs text-purple-300 bg-purple-950/40 hover:bg-purple-900/60 border border-purple-500/30 hover:border-purple-400 transition-all"
+                >
+                  <Share2 className="w-4 h-4 text-purple-400" />
+                  <span>{lang === 'es' ? 'Share on Social' : lang === 'pt' ? 'Compartilhar' : 'Share on Social'}</span>
+                </button>
+
                 <button
                   onClick={handleGenerateSlide}
                   disabled={isGenerating || !customPrompt.trim()}

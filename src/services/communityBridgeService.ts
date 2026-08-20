@@ -3,7 +3,9 @@ import {
   InboundWhatsAppQuery, 
   BridgeTelemetryStats, 
   BroadcastScheduleConfig,
-  KnowledgeItem 
+  KnowledgeItem,
+  WelcomeMessageConfig,
+  WelcomePreset
 } from '../types/communityTypes';
 import { 
   ADMIN_PHONE_NUMBER, 
@@ -17,6 +19,100 @@ import { agentEngine, AgentQueryResult } from './agentEngine';
 const BROADCASTS_KEY = 'kbox_bridge_broadcasts_v1';
 const INBOUND_KEY = 'kbox_bridge_inbound_queries_v1';
 const SCHEDULES_KEY = 'kbox_bridge_schedules_v1';
+const WELCOME_CONFIG_KEY = 'kbox_bridge_welcome_config_v1';
+
+export const PLATFORM_PUBLIC_URL = typeof window !== 'undefined' ? window.location.origin : 'https://ais-pre-352m3ktcmlbnpnbbckkt2d-556668617791.us-west2.run.app';
+
+export const WELCOME_PRESETS: WelcomePreset[] = [
+  {
+    id: 'preset-executive',
+    name: 'Ejecutivo C-Suite (Finanzas, MACRS & ROI)',
+    description: 'Enfocado en directores de tecnología, finanzas y gerentes generales evaluando CAPEX vs OPEX.',
+    category: 'executive',
+    template: `👋 ¡Bienvenido/a {userName} al grupo oficial *{groupName}*! 🚀
+
+🏛️ *Dirección & Presidencia:* {adminName} ({adminPhone})
+🏢 *Ecosistema:* Plataforma Kboxhubia de Soberanía Computacional & ROI en Hardware de IA.
+
+📊 *Recursos Ejecutivos Inmediatos:*
+• 15 White Papers Técnicos y Modelos Financieros (MACRS, CAPEX vs OPEX).
+• Análisis de Payback: 4x NVIDIA L40S amortizado en 3.4 meses vs Nube.
+• 7 Modelos de Granja de Dinero con Inferencia Privada.
+
+🔗 *Acceso a la Plataforma Digital en Vivo:*
+{platformUrl}
+
+💡 Siéntete libre de presentarte con tu nombre, empresa y país. ¡Bienvenido a bordo!`
+  },
+  {
+    id: 'preset-technical',
+    name: 'Técnico MLOps & Arquitectura GPU',
+    description: 'Enfocado en ingenieros de sistemas, MLOps e infraestructura local de inferencia.',
+    category: 'technical',
+    template: `👋 ¡Hola {userName}! Te damos la bienvenida a *{groupName}* ⚡
+
+⚙️ *Stack & Enfoque:* Inferencia Local de LLMs (DeepSeek-V3, Llama 3.3 70B, Qwen 2.5), vLLM, SVR, y racks 4x L40S / H100.
+👨‍💻 *Coordinador Técnico:* {adminName} ({adminPhone})
+
+🛠️ *Herramientas Disponibles:*
+• Simuladores de VRAM y Concurrencia de Tokens/seg.
+• Arquitecturas RAG Air-Gapped y Reducción de Churn ISP con SNMP/XGBoost.
+• Dossiers y Scripts de Benchmark descargables.
+
+🔗 *Plataforma:* {platformUrl}
+
+📌 Comparte tus consultas sobre hardware y orquestación multi-agente en cualquier momento.`
+  },
+  {
+    id: 'preset-money-farm',
+    name: 'Granja de Cultivo de Dinero (7 Modelos)',
+    description: 'Enfocado en inversionistas, creadores de SaaS y monetización de cómputo privado.',
+    category: 'money_farm',
+    template: `👋 ¡Bienvenido/a {userName} a la comunidad de *{groupName}*! 🌾💰
+
+💡 *Objetivo:* Monetización de Hardware de IA y Creación de Granjas de Inferencia Privada.
+👨‍💼 *Director:* {adminName} ({adminPhone})
+
+📈 *Modelos Destacados:*
+• Micro-SaaS Local de Tokens Privados (ROI 280% Año 1)
+• Arbitraje de Cómputo Ocioso & Servidores GPU
+• Asistentes de Voz para Clínicas y Despachos Legales
+
+🔗 *Explora los 7 Modelos en Vivo:*
+{platformUrl}
+
+🤝 ¡Coméntanos qué modelo te interesa más para enviarte el dossier técnico!`
+  },
+  {
+    id: 'preset-telecom',
+    name: 'Telecom & Reducción de Churn ISP',
+    description: 'Enfocado en proveedores de internet, CTOs de fibra óptica y operadores de red.',
+    category: 'telecom',
+    template: `👋 ¡Bienvenido/a {userName} a *{groupName}*! 📡
+
+🌐 *Foco Sectorial:* Telecomunicaciones, Redes de Fibra Óptica (FTTH/GPON) e Inteligencia Artificial Predictiva.
+👨‍💼 *Admin:* {adminName} ({adminPhone})
+
+🎯 *Soluciones Clave:*
+• Reducción de Churn en ISPs del 3.8% al <0.9% con Machine Learning.
+• Mantenimiento Predictivo OLT/ONU y Detección Temprana de Falla Óptica.
+• Auditorías de Ahorro para Redes de 10k a 100k Abonados.
+
+🔗 *Simulador y Casos de Estudio:*
+{platformUrl}
+
+💬 ¡Bienvenido! Cuéntanos sobre tu red para compartir métricas de referencia.`
+  }
+];
+
+export const INITIAL_WELCOME_CONFIG: WelcomeMessageConfig = {
+  template: WELCOME_PRESETS[0].template,
+  enabled: true,
+  autoCopyOnJoin: true,
+  lastUpdated: '2026-08-20 08:00:00',
+  welcomeCount: 14,
+  selectedPresetId: 'preset-executive'
+};
 
 // Initial pre-configured Executive Broadcasts
 export const INITIAL_BROADCASTS: WhatsAppBroadcastItem[] = [
@@ -141,6 +237,7 @@ class CommunityBridgeService {
   private broadcasts: WhatsAppBroadcastItem[] = [];
   private inboundQueries: InboundWhatsAppQuery[] = [];
   private schedules: BroadcastScheduleConfig[] = [];
+  private welcomeConfig: WelcomeMessageConfig = INITIAL_WELCOME_CONFIG;
 
   constructor() {
     this.loadState();
@@ -156,11 +253,15 @@ class CommunityBridgeService {
 
       const sch = localStorage.getItem(SCHEDULES_KEY);
       this.schedules = sch ? JSON.parse(sch) : INITIAL_SCHEDULES;
+
+      const wel = localStorage.getItem(WELCOME_CONFIG_KEY);
+      this.welcomeConfig = wel ? JSON.parse(wel) : INITIAL_WELCOME_CONFIG;
     } catch (e) {
       console.warn('Bridge store fallback to memory:', e);
       this.broadcasts = INITIAL_BROADCASTS;
       this.inboundQueries = INITIAL_INBOUND_QUERIES;
       this.schedules = INITIAL_SCHEDULES;
+      this.welcomeConfig = INITIAL_WELCOME_CONFIG;
     }
   }
 
@@ -169,9 +270,104 @@ class CommunityBridgeService {
       localStorage.setItem(BROADCASTS_KEY, JSON.stringify(this.broadcasts));
       localStorage.setItem(INBOUND_KEY, JSON.stringify(this.inboundQueries));
       localStorage.setItem(SCHEDULES_KEY, JSON.stringify(this.schedules));
+      localStorage.setItem(WELCOME_CONFIG_KEY, JSON.stringify(this.welcomeConfig));
     } catch (e) {
       console.warn('Error saving bridge state:', e);
     }
+  }
+
+  // --- WELCOME MESSAGE AUTOMATION ENGINE ---
+
+  public getWelcomeConfig(): WelcomeMessageConfig {
+    return { ...this.welcomeConfig };
+  }
+
+  public getWelcomePresets(): WelcomePreset[] {
+    return [...WELCOME_PRESETS];
+  }
+
+  public updateWelcomeConfig(partial: Partial<WelcomeMessageConfig>): WelcomeMessageConfig {
+    this.welcomeConfig = {
+      ...this.welcomeConfig,
+      ...partial,
+      lastUpdated: new Date().toISOString().replace('T', ' ').slice(0, 19)
+    };
+    this.saveState();
+    return { ...this.welcomeConfig };
+  }
+
+  public applyWelcomePreset(presetId: string): WelcomeMessageConfig {
+    const found = WELCOME_PRESETS.find(p => p.id === presetId) || WELCOME_PRESETS[0];
+    this.welcomeConfig = {
+      ...this.welcomeConfig,
+      template: found.template,
+      selectedPresetId: found.id,
+      lastUpdated: new Date().toISOString().replace('T', ' ').slice(0, 19)
+    };
+    this.saveState();
+    return { ...this.welcomeConfig };
+  }
+
+  public resetWelcomeConfig(): WelcomeMessageConfig {
+    this.welcomeConfig = {
+      ...INITIAL_WELCOME_CONFIG,
+      lastUpdated: new Date().toISOString().replace('T', ' ').slice(0, 19)
+    };
+    this.saveState();
+    return { ...this.welcomeConfig };
+  }
+
+  // Interpolates template variables with real dynamic context
+  public formatWelcomeMessage(templateOverride?: string, customVars?: Record<string, string>): string {
+    const rawTemplate = templateOverride || this.welcomeConfig.template || INITIAL_WELCOME_CONFIG.template;
+    const now = new Date();
+    const dateFormatted = now.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+    const defaultVariables: Record<string, string> = {
+      '{userName}': customVars?.['{userName}'] || customVars?.userName || 'Nuevo Miembro',
+      '{groupName}': WHATSAPP_GROUP_NAME,
+      '{adminName}': 'Ing. Jorge Huerta',
+      '{adminPhone}': ADMIN_PHONE_NUMBER,
+      '{platformUrl}': PLATFORM_PUBLIC_URL,
+      '{date}': dateFormatted,
+      '{communityName}': WHATSAPP_GROUP_NAME
+    };
+
+    const finalVars = { ...defaultVariables, ...(customVars || {}) };
+
+    let output = rawTemplate;
+    Object.entries(finalVars).forEach(([key, val]) => {
+      // Replace key directly or if passed without braces
+      const placeholder = key.startsWith('{') ? key : `{${key}}`;
+      output = output.split(placeholder).join(val);
+    });
+
+    return output;
+  }
+
+  // Executed whenever any user joins the group via our link
+  public handleUserJoinWhatsApp(customName?: string): { success: boolean; formattedMessage: string; copiedToClipboard: boolean } {
+    const formatted = this.formatWelcomeMessage(undefined, {
+      '{userName}': customName || 'Nuevo Miembro'
+    });
+
+    let copied = false;
+    if (this.welcomeConfig.enabled && this.welcomeConfig.autoCopyOnJoin && typeof navigator !== 'undefined' && navigator.clipboard) {
+      try {
+        navigator.clipboard.writeText(formatted);
+        copied = true;
+        this.welcomeConfig.welcomeCount = (this.welcomeConfig.welcomeCount || 0) + 1;
+        this.saveState();
+      } catch (err) {
+        console.warn('Clipboard write failed on join event:', err);
+      }
+    }
+
+    return {
+      success: true,
+      formattedMessage: formatted,
+      copiedToClipboard: copied
+    };
   }
 
   // --- BROADCAST ENGINE ---

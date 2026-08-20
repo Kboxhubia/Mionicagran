@@ -17,6 +17,7 @@ import {
 import { ADMIN_PHONE_NUMBER, WHATSAPP_GROUP_NAME, WHATSAPP_DIRECT_LINK } from '../data/communityData';
 import { agentEngine } from '../services/agentEngine';
 import { authService } from '../services/authService';
+import { communityBridgeService } from '../services/communityBridgeService';
 import { audioSynth } from '../services/audioSynth';
 import { exportExecutivePdfReport } from '../services/pdfExporter';
 
@@ -358,6 +359,7 @@ export const FreemiumRegistrationModal: React.FC<FreemiumRegistrationModalProps>
                     href={WHATSAPP_DIRECT_LINK}
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={() => communityBridgeService.handleUserJoinWhatsApp(contactInput || 'Nuevo Miembro Registrado')}
                     className="flex-1 py-2.5 px-4 rounded-xl font-bold text-xs bg-emerald-500 hover:bg-emerald-400 text-black flex items-center justify-center gap-2 shadow-md transition-all"
                   >
                     <MessageCircle className="w-4 h-4" />
@@ -387,6 +389,7 @@ export const FreemiumRegistrationModal: React.FC<FreemiumRegistrationModalProps>
                 href={WHATSAPP_DIRECT_LINK}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => communityBridgeService.handleUserJoinWhatsApp(contactInput || 'Visitante')}
                 className="text-emerald-400 hover:underline flex items-center gap-1 font-semibold text-[11px]"
               >
                 <MessageCircle className="w-3.5 h-3.5" />

@@ -25,10 +25,13 @@ import { AuthModal } from './components/AuthModal';
 import { AdminAccessDeniedModal } from './components/AdminAccessDeniedModal';
 import { authService } from './services/authService';
 import { audioSynth } from './services/audioSynth';
+import { useFeatureTracking } from './hooks/useFeatureTracking';
 import { UI_TRANSLATIONS } from './services/i18n';
 import { Sparkles } from 'lucide-react';
 
 export default function App() {
+  const { interactionLogs, logInteraction, clearLogs } = useFeatureTracking();
+
   const [lang, setLang] = useState<Language>(() => {
     try {
       const savedLang = localStorage.getItem('kbox_presentation_lang');
@@ -61,14 +64,18 @@ export default function App() {
 
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
 
-  // Sync current slide index to localStorage
+  // Sync current slide index to localStorage & log slide progress
   useEffect(() => {
     try {
       localStorage.setItem('kbox_presentation_current_slide', currentSlideIndex.toString());
+      if (slides[currentSlideIndex]) {
+        const slideTitle = slides[currentSlideIndex].title || `Slide ${currentSlideIndex + 1}`;
+        logInteraction('Presentation Player', 'navigate', `Visualización: ${slideTitle} (#${currentSlideIndex + 1})`);
+      }
     } catch {
       // ignore
     }
-  }, [currentSlideIndex]);
+  }, [currentSlideIndex, logInteraction, slides]);
 
   // Sync language to localStorage
   useEffect(() => {
@@ -172,32 +179,71 @@ export default function App() {
       {/* Top Navigation & Executive Header */}
       <Header
         lang={lang}
-        onSelectLang={(selectedLang) => setLang(selectedLang)}
+        onSelectLang={(selectedLang) => {
+          logInteraction('Language Selector', 'interact', `Cambio de idioma a: ${selectedLang}`);
+          setLang(selectedLang);
+        }}
         audioSettings={audioSettings}
         setAudioSettings={setAudioSettings}
         alerts={PREDICTIVE_ALERTS}
-        onOpenAlerts={() => setIsAlertsOpen(true)}
-        onOpenCalculator={() => setIsCalculatorOpen(true)}
-        onOpenPortalModal={() => setIsPortalModalOpen(true)}
-        onOpenDossier={() => setIsDossierOpen(true)}
-        onOpenAiQna={() => setIsAiQnaOpen(true)}
-        onOpenTrendRadar={() => setIsTrendRadarOpen(true)}
-        onOpenPythonSuite={() => setIsPythonSuiteOpen(true)}
-        onOpenFeedback={() => setIsFeedbackOpen(true)}
-        onOpenCommunity={() => setIsCommunityOpen(true)}
+        onOpenAlerts={() => {
+          logInteraction('Predictive Alerts', 'open', 'Inspección de alertas predictivas de mercado y hardware');
+          setIsAlertsOpen(true);
+        }}
+        onOpenCalculator={() => {
+          logInteraction('ROI Calculator', 'open', 'Acceso al simulador interactivo de amortización de clústeres');
+          setIsCalculatorOpen(true);
+        }}
+        onOpenPortalModal={() => {
+          logInteraction('Portal Widgets', 'open', 'Exploración de widgets embebibles');
+          setIsPortalModalOpen(true);
+        }}
+        onOpenDossier={() => {
+          logInteraction('Executive Dossier', 'open', 'Revisión y exportación de informe PDF ejecutivo');
+          setIsDossierOpen(true);
+        }}
+        onOpenAiQna={() => {
+          logInteraction('AI Q&A Assistant', 'open', 'Consulta al copiloto de inteligencia artificial');
+          setIsAiQnaOpen(true);
+        }}
+        onOpenTrendRadar={() => {
+          logInteraction('Trend Radar', 'open', 'Monitoreo de señales tecnológicas en vivo');
+          setIsTrendRadarOpen(true);
+        }}
+        onOpenPythonSuite={() => {
+          logInteraction('Python Sandbox', 'open', 'Ejecución de simulaciones y suites computacionales');
+          setIsPythonSuiteOpen(true);
+        }}
+        onOpenFeedback={() => {
+          logInteraction('Executive Feedback', 'open', 'Participación en el foro C-Suite');
+          setIsFeedbackOpen(true);
+        }}
+        onOpenCommunity={() => {
+          logInteraction('Community Hub', 'open', 'Apertura de centro de White Papers y comunidad');
+          setIsCommunityOpen(true);
+        }}
         onOpenCommunityBridge={() => 
           handleRequestAdminAccess(
             lang === 'es' ? 'Kbox Community Bridge (WhatsApp & Distribución)' : 'Kbox Community Bridge',
-            () => setIsCommunityBridgeOpen(true)
+            () => {
+              logInteraction('WhatsApp Bridge', 'open', 'Acceso al módulo de distribución autónoma WhatsApp');
+              setIsCommunityBridgeOpen(true);
+            }
           )
         }
         onOpenAdmin={() => 
           handleRequestAdminAccess(
             lang === 'es' ? 'Admin Dashboard (15 Temas & Leads)' : 'Admin Dashboard',
-            () => setIsAdminOpen(true)
+            () => {
+              logInteraction('Admin Dashboard', 'open', 'Acceso al centro de control administrativo Master');
+              setIsAdminOpen(true);
+            }
           )
         }
-        onOpenAuthModal={() => setIsAuthModalOpen(true)}
+        onOpenAuthModal={() => {
+          logInteraction('Auth Profile', 'open', 'Apertura de modal de autenticación/perfil');
+          setIsAuthModalOpen(true);
+        }}
         isFullscreen={isFullscreen}
         onToggleFullscreen={toggleFullscreen}
         currentSlideIndex={currentSlideIndex}
@@ -299,6 +345,7 @@ export default function App() {
         onClose={() => setIsTrendRadarOpen(false)}
         lang={lang}
         onAddNewSlide={handleAddNewSlide}
+        currentSlide={slides[currentSlideIndex]}
       />
 
       {/* Python Intelligence Suite Modal */}
@@ -343,11 +390,13 @@ export default function App() {
         lang={lang}
       />
 
-      {/* Admin Dashboard Modal (15 Topics Authorization, Leads DB, Knowledge Index) */}
+      {/* Admin Dashboard Modal (15 Topics Authorization, Leads DB, Knowledge Index, Telemetry) */}
       <AdminDashboardModal
         isOpen={isAdminOpen}
         onClose={() => setIsAdminOpen(false)}
         lang={lang}
+        interactionLogs={interactionLogs}
+        onClearLogs={clearLogs}
         onOpenCommunityBridge={() => {
           setIsAdminOpen(false);
           setIsCommunityBridgeOpen(true);
@@ -359,6 +408,7 @@ export default function App() {
         isOpen={isFreemiumModalOpen}
         onClose={() => setIsFreemiumModalOpen(false)}
         onSuccessUnlock={() => {
+          logInteraction('Freemium Gate', 'unlock', 'Desbloqueo exitoso de suscripción freemium / acceso premium');
           setIsSubscribedUnlocked(true);
         }}
         lang={lang}
@@ -389,7 +439,12 @@ export default function App() {
       {/* Floating Action Button for AI Q&A */}
       <AiFloatingButton
         isOpen={isAiQnaOpen}
-        onClick={() => setIsAiQnaOpen(prev => !prev)}
+        onClick={() => {
+          if (!isAiQnaOpen) {
+            logInteraction('AI Assistant Floating Trigger', 'open', `Consulta iniciada desde diapositiva #${currentSlideIndex + 1}`);
+          }
+          setIsAiQnaOpen(prev => !prev);
+        }}
         currentSlide={slides[currentSlideIndex]}
       />
 

@@ -139,3 +139,20 @@ export interface BroadcastScheduleConfig {
   nextRun: string;
 }
 
+export interface WelcomeMessageConfig {
+  template: string;
+  enabled: boolean;
+  autoCopyOnJoin: boolean;
+  lastUpdated: string;
+  welcomeCount: number;
+  selectedPresetId?: string;
+}
+
+export interface WelcomePreset {
+  id: string;
+  name: string;
+  description: string;
+  category: 'executive' | 'technical' | 'money_farm' | 'telecom';
+  template: string;
+}
+

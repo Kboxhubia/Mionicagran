@@ -127,3 +127,12 @@ export interface PythonSandboxPreset {
   code: string;
   outputPreview?: string;
 }
+
+export interface InteractionLog {
+  id: string;
+  feature: string;
+  action: 'open' | 'click' | 'export' | 'interact' | 'navigate' | 'unlock';
+  timestamp: string;
+  userRole?: string;
+  details?: string;
+}
