@@ -1,26 +1,31 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   Volume2, 
   VolumeX, 
-  Download, 
   Calculator, 
-  ExternalLink, 
   Bell, 
-  Sliders, 
   Maximize2, 
   Minimize2, 
   FileText, 
+  Radio, 
+  Sparkles, 
+  Mic, 
+  MicOff, 
+  Globe, 
+  Presentation, 
+  Bot, 
+  Flame, 
+  Terminal, 
+  Languages,
+  ChevronDown,
+  Building2,
+  Cpu,
   Share2,
-  Radio,
-  Sparkles,
-  Mic,
-  MicOff,
-  Globe,
-  Presentation,
-  Bot,
-  Flame,
-  Terminal,
-  Languages
+  MessageSquareText,
+  DollarSign,
+  Layers,
+  ArrowRight,
+  TrendingUp
 } from 'lucide-react';
 import { AudioSettings, PredictiveAlert, Language } from '../types';
 import { exportExecutivePdfReport } from '../services/pdfExporter';
@@ -41,6 +46,7 @@ interface HeaderProps {
   onOpenAiQna?: () => void;
   onOpenTrendRadar?: () => void;
   onOpenPythonSuite?: () => void;
+  onOpenFeedback?: () => void;
   isFullscreen: boolean;
   onToggleFullscreen: () => void;
   currentSlideIndex: number;
@@ -60,17 +66,35 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenAiQna,
   onOpenTrendRadar,
   onOpenPythonSuite,
+  onOpenFeedback,
   isFullscreen,
   onToggleFullscreen,
   currentSlideIndex,
   totalSlides
 }) => {
-  const [showAudioMenu, setShowAudioMenu] = useState(false);
-  const [showLangMenu, setShowLangMenu] = useState(false);
+  // Dropdown states for the 3 master blocks
+  const [openDropdown, setOpenDropdown] = useState<'finance' | 'compute' | 'publish' | 'audio' | 'lang' | null>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [isExportingPptx, setIsExportingPptx] = useState(false);
 
+  const headerRef = useRef<HTMLDivElement>(null);
   const t = UI_TRANSLATIONS[lang];
+
+  // Close dropdowns on outside click
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (headerRef.current && !headerRef.current.contains(event.target as Node)) {
+        setOpenDropdown(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const toggleDropdown = (name: 'finance' | 'compute' | 'publish' | 'audio' | 'lang') => {
+    audioSynth.playClickSound();
+    setOpenDropdown(prev => (prev === name ? null : name));
+  };
 
   const toggleMusic = () => {
     const isNowPlaying = audioSynth.togglePlay(audioSettings.theme);
@@ -103,6 +127,7 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   const handlePdfExport = async () => {
+    setOpenDropdown(null);
     audioSynth.playClickSound();
     setIsExporting(true);
     try {
@@ -115,6 +140,7 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   const handlePptxExport = async () => {
+    setOpenDropdown(null);
     audioSynth.playClickSound();
     setIsExportingPptx(true);
     try {
@@ -127,9 +153,10 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="h-14 sm:h-16 px-3 sm:px-6 bg-[#0E0E10]/95 backdrop-blur-md border-b border-[#27272A] flex items-center justify-between z-30 sticky top-0">
+    <header ref={headerRef} className="h-14 sm:h-16 px-3 sm:px-6 bg-[#0E0E10]/95 backdrop-blur-md border-b border-[#27272A] flex items-center justify-between z-30 sticky top-0">
+      
       {/* Left: Author Brand & Title */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 shrink-0">
         <div className="w-8 h-8 rounded-lg bg-linear-to-br from-amber-400 to-amber-600 flex items-center justify-center text-black font-bold font-mono text-sm shadow-md">
           JH
         </div>
@@ -138,41 +165,370 @@ export const Header: React.FC<HeaderProps> = ({
             <span className="font-bold text-sm tracking-tight text-white">
               {t.author_name}
             </span>
-            <span className="hidden md:inline-block px-1.5 py-0.5 rounded text-[10px] bg-[#27272A] text-amber-400 font-mono">
+            <span className="hidden xl:inline-block px-1.5 py-0.5 rounded text-[10px] bg-[#27272A] text-amber-400 font-mono">
               Telecom & AI FinOps
             </span>
           </div>
-          <span className="text-[11px] text-gray-400 font-normal truncate max-w-[200px] sm:max-w-[340px]">
+          <span className="text-[11px] text-gray-400 font-normal truncate max-w-[140px] sm:max-w-[260px]">
             {t.author_sub}
           </span>
         </div>
       </div>
 
-      {/* Center/Right Toolbar */}
-      <div className="flex items-center gap-1.5 sm:gap-2">
-        {/* Language Switcher Dropdown */}
+      {/* Center: THE 3 MASTER EXECUTIVE BLOCKS */}
+      <div className="flex items-center gap-1.5 sm:gap-2.5">
+        
+        {/* ======================================================== */}
+        {/* BLOCK 1: FINANZAS & ESTRATEGIA (CFO / CEO) */}
+        {/* ======================================================== */}
+        <div className="relative">
+          <button
+            id="header-block-finance"
+            onClick={() => toggleDropdown('finance')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-full border transition-all shadow-sm ${
+              openDropdown === 'finance'
+                ? 'bg-amber-500 text-black border-amber-400 ring-2 ring-amber-400/30'
+                : 'bg-[#1A1A1C] hover:bg-[#27272A] text-gray-200 border-[#333335] hover:border-amber-500/50'
+            }`}
+          >
+            <DollarSign className={`w-3.5 h-3.5 ${openDropdown === 'finance' ? 'text-black' : 'text-amber-400'}`} />
+            <span className="tracking-tight">
+              {lang === 'es' ? 'Finanzas & Estrategia' : lang === 'pt' ? 'Finanças & Estratégia' : 'Finance & Strategy'}
+            </span>
+            {alerts.length > 0 && (
+              <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
+            )}
+            <ChevronDown className={`w-3 h-3 transition-transform ${openDropdown === 'finance' ? 'rotate-180' : ''}`} />
+          </button>
+
+          {openDropdown === 'finance' && (
+            <div className="absolute left-0 sm:left-auto sm:right-0 mt-2 w-72 sm:w-80 bg-[#141416] border border-[#2B2B30] rounded-2xl shadow-2xl p-2 z-50 flex flex-col gap-1 backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150">
+              <div className="px-3 py-1.5 border-b border-[#27272A] text-[10px] font-mono font-bold uppercase tracking-wider text-amber-400 flex items-center justify-between">
+                <span>{lang === 'es' ? 'Herramientas de Capital & Retorno' : 'Capital & ROI Suite'}</span>
+                <span className="text-gray-500">CFO • CEO</span>
+              </div>
+
+              {/* 1.1 Calculadora ROI */}
+              <button
+                onClick={() => {
+                  setOpenDropdown(null);
+                  audioSynth.playClickSound();
+                  onOpenCalculator();
+                }}
+                className="w-full text-left p-2.5 rounded-xl hover:bg-[#202024] text-gray-200 hover:text-white transition-all flex items-start gap-3 group"
+              >
+                <div className="p-2 rounded-lg bg-cyan-950/60 border border-cyan-700/50 text-cyan-400 group-hover:scale-105 transition-transform">
+                  <Calculator className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                    <span>{t.calculator_title}</span>
+                    <span className="text-[9px] px-1 rounded bg-cyan-950 text-cyan-300 font-mono">3.4m ROI</span>
+                  </div>
+                  <div className="text-[11px] text-gray-400 leading-tight mt-0.5">
+                    {lang === 'es' ? 'Simulador dinámico CAPEX vs OPEX y punto de equilibrio' : 'Dynamic CAPEX vs OPEX TCO break-even simulator'}
+                  </div>
+                </div>
+              </button>
+
+              {/* 1.2 Dossier Ejecutivo & Diagnóstico 48h */}
+              <button
+                onClick={() => {
+                  setOpenDropdown(null);
+                  audioSynth.playClickSound();
+                  onOpenDossier();
+                }}
+                className="w-full text-left p-2.5 rounded-xl hover:bg-[#202024] text-gray-200 hover:text-white transition-all flex items-start gap-3 group"
+              >
+                <div className="p-2 rounded-lg bg-amber-950/60 border border-amber-700/50 text-amber-400 group-hover:scale-105 transition-transform">
+                  <FileText className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                    <span>{t.dossier_btn}</span>
+                    <span className="text-[9px] px-1 rounded bg-amber-950 text-amber-300 font-mono">48h Delivery</span>
+                  </div>
+                  <div className="text-[11px] text-gray-400 leading-tight mt-0.5">
+                    {lang === 'es' ? 'Memoria técnica de inversión y solicitud de auditoría' : 'Executive memorandum and 48-hour audit request'}
+                  </div>
+                </div>
+              </button>
+
+              {/* 1.3 Widgets Financieros Embebibles (KBOX HUB IA) */}
+              <button
+                onClick={() => {
+                  setOpenDropdown(null);
+                  audioSynth.playClickSound();
+                  onOpenPortalModal();
+                }}
+                className="w-full text-left p-2.5 rounded-xl hover:bg-[#202024] text-gray-200 hover:text-white transition-all flex items-start gap-3 group"
+              >
+                <div className="p-2 rounded-lg bg-purple-950/60 border border-purple-700/50 text-purple-400 group-hover:scale-105 transition-transform">
+                  <Globe className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                    <span>Widgets Web (KBOX HUB IA)</span>
+                    <span className="text-[9px] px-1 rounded bg-purple-950 text-purple-300 font-mono">Embed</span>
+                  </div>
+                  <div className="text-[11px] text-gray-400 leading-tight mt-0.5">
+                    {lang === 'es' ? 'Snippets de calculadoras financieras para tu intranet' : 'Embeddable financial ROI widgets for corporate portals'}
+                  </div>
+                </div>
+              </button>
+
+              {/* 1.4 Alertas Predictivas de Mercado */}
+              <button
+                onClick={() => {
+                  setOpenDropdown(null);
+                  audioSynth.playClickSound();
+                  onOpenAlerts();
+                }}
+                className="w-full text-left p-2.5 rounded-xl hover:bg-[#202024] text-gray-200 hover:text-white transition-all flex items-start gap-3 group"
+              >
+                <div className="p-2 rounded-lg bg-rose-950/60 border border-rose-700/50 text-rose-400 group-hover:scale-105 transition-transform relative">
+                  <Bell className="w-4 h-4" />
+                  {alerts.length > 0 && (
+                    <span className="absolute top-1 right-1 w-2 h-2 bg-rose-500 rounded-full animate-ping"></span>
+                  )}
+                </div>
+                <div>
+                  <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                    <span>{lang === 'es' ? 'Telemetría & Alertas de Mercado' : 'Market Telemetry & Alerts'}</span>
+                    <span className="text-[9px] px-1 rounded bg-rose-950 text-rose-300 font-mono">{alerts.length} Live</span>
+                  </div>
+                  <div className="text-[11px] text-gray-400 leading-tight mt-0.5">
+                    {lang === 'es' ? 'Precios de GPUs, inflación en nube y alertas de riesgo' : 'GPU spot prices, cloud API inflation & risk telemetry'}
+                  </div>
+                </div>
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* ======================================================== */}
+        {/* BLOCK 2: CÓMPUTO & MLOPS (CTO / INGENIERÍA) */}
+        {/* ======================================================== */}
+        <div className="relative">
+          <button
+            id="header-block-compute"
+            onClick={() => toggleDropdown('compute')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-full border transition-all shadow-sm ${
+              openDropdown === 'compute'
+                ? 'bg-cyan-500 text-black border-cyan-400 ring-2 ring-cyan-400/30'
+                : 'bg-[#1A1A1C] hover:bg-[#27272A] text-gray-200 border-[#333335] hover:border-cyan-500/50'
+            }`}
+          >
+            <Cpu className={`w-3.5 h-3.5 ${openDropdown === 'compute' ? 'text-black' : 'text-cyan-400'}`} />
+            <span className="tracking-tight">
+              {lang === 'es' ? 'Cómputo & MLOps' : lang === 'pt' ? 'Computação & MLOps' : 'Compute & MLOps'}
+            </span>
+            <ChevronDown className={`w-3 h-3 transition-transform ${openDropdown === 'compute' ? 'rotate-180' : ''}`} />
+          </button>
+
+          {openDropdown === 'compute' && (
+            <div className="absolute left-0 sm:left-auto sm:right-0 mt-2 w-72 sm:w-80 bg-[#141416] border border-[#2B2B30] rounded-2xl shadow-2xl p-2 z-50 flex flex-col gap-1 backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150">
+              <div className="px-3 py-1.5 border-b border-[#27272A] text-[10px] font-mono font-bold uppercase tracking-wider text-cyan-400 flex items-center justify-between">
+                <span>{lang === 'es' ? 'Motores Determinísticos & IA' : 'Deterministic Engines & AI'}</span>
+                <span className="text-gray-500">CTO • Tech</span>
+              </div>
+
+              {/* 2.1 Suite Python 7 Motores */}
+              {onOpenPythonSuite && (
+                <button
+                  onClick={() => {
+                    setOpenDropdown(null);
+                    audioSynth.playClickSound();
+                    onOpenPythonSuite();
+                  }}
+                  className="w-full text-left p-2.5 rounded-xl hover:bg-[#202024] text-gray-200 hover:text-white transition-all flex items-start gap-3 group"
+                >
+                  <div className="p-2 rounded-lg bg-emerald-950/60 border border-emerald-700/50 text-emerald-400 group-hover:scale-105 transition-transform">
+                    <Terminal className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                      <span>{t.python_suite}</span>
+                      <span className="text-[9px] px-1 rounded bg-emerald-950 text-emerald-300 font-mono">7 Engines</span>
+                    </div>
+                    <div className="text-[11px] text-gray-400 leading-tight mt-0.5">
+                      {lang === 'es' ? 'Monte Carlo 10k, VRAM/KV-Cache, Churn y LaTeX IEEE' : 'Monte Carlo 10k, VRAM sizing, Telecom churn & LaTeX'}
+                    </div>
+                  </div>
+                </button>
+              )}
+
+              {/* 2.2 Radar de Tendencias B2B & Generador */}
+              {onOpenTrendRadar && (
+                <button
+                  onClick={() => {
+                    setOpenDropdown(null);
+                    audioSynth.playClickSound();
+                    onOpenTrendRadar();
+                  }}
+                  className="w-full text-left p-2.5 rounded-xl hover:bg-[#202024] text-gray-200 hover:text-white transition-all flex items-start gap-3 group"
+                >
+                  <div className="p-2 rounded-lg bg-orange-950/60 border border-orange-700/50 text-orange-400 group-hover:scale-105 transition-transform">
+                    <Flame className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                      <span>{t.trends_generator}</span>
+                      <span className="text-[9px] px-1 rounded bg-orange-950 text-orange-300 font-mono">LinkedIn / X</span>
+                    </div>
+                    <div className="text-[11px] text-gray-400 leading-tight mt-0.5">
+                      {lang === 'es' ? 'Scoring de señales B2B y generador de láminas' : 'Real-time B2B topic radar & AI presentation generator'}
+                    </div>
+                  </div>
+                </button>
+              )}
+
+              {/* 2.3 Asesor Ejecutivo IA (Gemini 3.7) */}
+              {onOpenAiQna && (
+                <button
+                  onClick={() => {
+                    setOpenDropdown(null);
+                    audioSynth.playClickSound();
+                    onOpenAiQna();
+                  }}
+                  className="w-full text-left p-2.5 rounded-xl hover:bg-[#202024] text-gray-200 hover:text-white transition-all flex items-start gap-3 group"
+                >
+                  <div className="p-2 rounded-lg bg-amber-950/60 border border-amber-700/50 text-amber-400 group-hover:scale-105 transition-transform">
+                    <Bot className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                      <span>{t.ask_ai}</span>
+                      <span className="text-[9px] px-1 rounded bg-amber-950 text-amber-300 font-mono">Gemini 3.7</span>
+                    </div>
+                    <div className="text-[11px] text-gray-400 leading-tight mt-0.5">
+                      {lang === 'es' ? 'Consultas financieras y técnicas sobre la lámina activa' : 'Live contextual AI assistant for slide TCO metrics'}
+                    </div>
+                  </div>
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* ======================================================== */}
+        {/* BLOCK 3: PUBLICACIÓN & FEEDBACK (COMITÉ & COMUNIDAD) */}
+        {/* ======================================================== */}
+        <div className="relative">
+          <button
+            id="header-block-publish"
+            onClick={() => toggleDropdown('publish')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-full border transition-all shadow-sm ${
+              openDropdown === 'publish'
+                ? 'bg-emerald-500 text-black border-emerald-400 ring-2 ring-emerald-400/30'
+                : 'bg-[#1A1A1C] hover:bg-[#27272A] text-gray-200 border-[#333335] hover:border-emerald-500/50'
+            }`}
+          >
+            <Share2 className={`w-3.5 h-3.5 ${openDropdown === 'publish' ? 'text-black' : 'text-emerald-400'}`} />
+            <span className="tracking-tight">
+              {lang === 'es' ? 'Publicación & Feedback' : lang === 'pt' ? 'Publicação & Feedback' : 'Export & Feedback'}
+            </span>
+            <ChevronDown className={`w-3 h-3 transition-transform ${openDropdown === 'publish' ? 'rotate-180' : ''}`} />
+          </button>
+
+          {openDropdown === 'publish' && (
+            <div className="absolute right-0 mt-2 w-72 sm:w-80 bg-[#141416] border border-[#2B2B30] rounded-2xl shadow-2xl p-2 z-50 flex flex-col gap-1 backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150">
+              <div className="px-3 py-1.5 border-b border-[#27272A] text-[10px] font-mono font-bold uppercase tracking-wider text-emerald-400 flex items-center justify-between">
+                <span>{lang === 'es' ? 'Entrega & Diálogo Ejecutivo' : 'Deliverables & C-Suite Forum'}</span>
+                <span className="text-gray-500">Boardroom</span>
+              </div>
+
+              {/* 3.1 Descargar PDF Ejecutivo */}
+              <button
+                onClick={handlePdfExport}
+                disabled={isExporting}
+                className="w-full text-left p-2.5 rounded-xl hover:bg-[#202024] text-gray-200 hover:text-white transition-all flex items-start gap-3 group disabled:opacity-50"
+              >
+                <div className="p-2 rounded-lg bg-blue-950/60 border border-blue-700/50 text-blue-400 group-hover:scale-105 transition-transform">
+                  <FileText className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                    <span>{isExporting ? t.export_pdf_loading : t.export_pdf}</span>
+                    <span className="text-[9px] px-1 rounded bg-blue-950 text-blue-300 font-mono">PDF Doc</span>
+                  </div>
+                  <div className="text-[11px] text-gray-400 leading-tight mt-0.5">
+                    {lang === 'es' ? 'Memoria ejecutiva completa con métricas para comités' : 'Full executive financial report with tables & metrics'}
+                  </div>
+                </div>
+              </button>
+
+              {/* 3.2 Exportar PowerPoint PPTX */}
+              <button
+                onClick={handlePptxExport}
+                disabled={isExportingPptx}
+                className="w-full text-left p-2.5 rounded-xl hover:bg-[#202024] text-gray-200 hover:text-white transition-all flex items-start gap-3 group disabled:opacity-50"
+              >
+                <div className="p-2 rounded-lg bg-amber-950/60 border border-amber-700/50 text-amber-400 group-hover:scale-105 transition-transform">
+                  <Presentation className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                    <span>{isExportingPptx ? t.export_pptx_loading : t.export_pptx}</span>
+                    <span className="text-[9px] px-1 rounded bg-amber-950 text-amber-300 font-mono">16:9 .pptx</span>
+                  </div>
+                  <div className="text-[11px] text-gray-400 leading-tight mt-0.5">
+                    {lang === 'es' ? 'Presentación editable en PowerPoint con todas las láminas' : 'Editable 16:9 presentation deck for executive boards'}
+                  </div>
+                </div>
+              </button>
+
+              {/* 3.3 Foro / Área de Preguntas & Comentarios */}
+              <button
+                onClick={() => {
+                  setOpenDropdown(null);
+                  audioSynth.playClickSound();
+                  if (onOpenFeedback) onOpenFeedback();
+                }}
+                className="w-full text-left p-2.5 rounded-xl hover:bg-[#202024] text-gray-200 hover:text-white transition-all flex items-start gap-3 group"
+              >
+                <div className="p-2 rounded-lg bg-emerald-950/60 border border-emerald-700/50 text-emerald-400 group-hover:scale-105 transition-transform">
+                  <MessageSquareText className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                    <span>{lang === 'es' ? 'Foro & Preguntas C-Suite' : 'Executive Q&A & Feedback'}</span>
+                    <span className="text-[9px] px-1 rounded bg-emerald-950 text-emerald-300 font-mono">Interact</span>
+                  </div>
+                  <div className="text-[11px] text-gray-400 leading-tight mt-0.5">
+                    {lang === 'es' ? 'Respuestas a objeciones, canal de dudas y comentarios' : 'C-Level objection handling matrix & feedback forum'}
+                  </div>
+                </div>
+              </button>
+            </div>
+          )}
+        </div>
+
+      </div>
+
+      {/* Right Toolbar: Language, Audio Engine, Fullscreen */}
+      <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+        
+        {/* Language Selector Dropdown */}
         <div className="relative">
           <button
             id="header-lang-btn"
-            onClick={() => {
-              audioSynth.playClickSound();
-              setShowLangMenu(!showLangMenu);
-            }}
+            onClick={() => toggleDropdown('lang')}
             title="Cambiar Idioma / Change Language / Mudar Idioma"
-            className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-bold rounded-full bg-[#1A1A1C] hover:bg-[#27272A] text-gray-200 border border-[#333335] hover:border-amber-500/50 transition-all shadow-sm"
+            className="flex items-center gap-1 px-2 sm:px-2.5 py-1.5 text-xs font-bold rounded-full bg-[#1A1A1C] hover:bg-[#27272A] text-gray-200 border border-[#333335] hover:border-amber-500/50 transition-all shadow-sm"
           >
             <Languages className="w-3.5 h-3.5 text-amber-400" />
-            <span className="font-mono text-amber-300 uppercase">
-              {lang === 'es' ? '🇪🇸 ES' : lang === 'pt' ? '🇧🇷 PT' : '🇺🇸 EN'}
+            <span className="font-mono text-amber-300 uppercase text-[11px]">
+              {lang === 'es' ? 'ES' : lang === 'pt' ? 'PT' : 'EN'}
             </span>
           </button>
 
-          {showLangMenu && (
+          {openDropdown === 'lang' && (
             <div className="absolute right-0 mt-2 w-44 bg-[#141416] border border-[#27272A] rounded-xl shadow-2xl p-1.5 z-50 flex flex-col gap-1">
               <button
                 onClick={() => {
                   onSelectLang('es');
-                  setShowLangMenu(false);
+                  setOpenDropdown(null);
                   audioSynth.playClickSound();
                 }}
                 className={`flex items-center justify-between px-3 py-2 text-xs rounded-lg transition-all ${
@@ -188,7 +544,7 @@ export const Header: React.FC<HeaderProps> = ({
               <button
                 onClick={() => {
                   onSelectLang('en');
-                  setShowLangMenu(false);
+                  setOpenDropdown(null);
                   audioSynth.playClickSound();
                 }}
                 className={`flex items-center justify-between px-3 py-2 text-xs rounded-lg transition-all ${
@@ -204,7 +560,7 @@ export const Header: React.FC<HeaderProps> = ({
               <button
                 onClick={() => {
                   onSelectLang('pt');
-                  setShowLangMenu(false);
+                  setOpenDropdown(null);
                   audioSynth.playClickSound();
                 }}
                 className={`flex items-center justify-between px-3 py-2 text-xs rounded-lg transition-all ${
@@ -220,89 +576,10 @@ export const Header: React.FC<HeaderProps> = ({
           )}
         </div>
 
-        {/* Trend Radar & Multi-Sector Generator Button */}
-        {onOpenTrendRadar && (
-          <button
-            id="header-trend-radar-btn"
-            onClick={() => {
-              audioSynth.playClickSound();
-              onOpenTrendRadar();
-            }}
-            title="Radar de Tendencias & Generador de Diapositivas (LinkedIn, X, ArXiv)"
-            className="hidden md:flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-full bg-[#1A1A1C] hover:bg-[#27272A] text-cyan-400 border border-cyan-500/40 hover:border-cyan-400 transition-all shadow-sm"
-          >
-            <Flame className="w-3.5 h-3.5 text-orange-400" />
-            <span>{t.trends_generator}</span>
-          </button>
-        )}
-
-        {/* Python Intelligence Suite Sandbox Button */}
-        {onOpenPythonSuite && (
-          <button
-            id="header-python-suite-btn"
-            onClick={() => {
-              audioSynth.playClickSound();
-              onOpenPythonSuite();
-            }}
-            title="Motor Python Sandbox (Monte Carlo, VRAM, Churn Predictor, LaTeX)"
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-full bg-[#1A1A1C] hover:bg-[#27272A] text-emerald-400 border border-emerald-500/40 hover:border-emerald-400 transition-all shadow-sm"
-          >
-            <Terminal className="w-3.5 h-3.5 text-emerald-400" />
-            <span className="hidden sm:inline">{t.python_suite}</span>
-          </button>
-        )}
-
-        {/* Predictive Market Intelligence Radar */}
-        <button
-          onClick={() => {
-            audioSynth.playClickSound();
-            onOpenAlerts();
-          }}
-          title="Live AI Hardware & Financial Market Alerts"
-          className="relative p-2 text-gray-400 hover:text-amber-400 hover:bg-[#1A1A1C] rounded-full transition-colors"
-        >
-          <Bell className="w-4 h-4" />
-          {alerts.length > 0 && (
-            <span className="absolute top-1 right-1 w-2 h-2 bg-rose-500 rounded-full animate-ping"></span>
-          )}
-          {alerts.length > 0 && (
-            <span className="absolute top-1 right-1 w-2 h-2 bg-rose-500 rounded-full"></span>
-          )}
-        </button>
-
-        {/* Interactive ROI Calculator Trigger */}
-        <button
-          onClick={() => {
-            audioSynth.playClickSound();
-            onOpenCalculator();
-          }}
-          title="Interactive Cloud vs On-Premise ROI Calculator"
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full bg-[#1A1A1C] hover:bg-[#27272A] text-gray-200 border border-[#333335] hover:border-cyan-500/50 transition-all shadow-sm"
-        >
-          <Calculator className="w-3.5 h-3.5 text-cyan-400" />
-          <span className="hidden sm:inline">{t.calculator_title}</span>
-        </button>
-
-        {/* Executive Dossier Trigger */}
-        <button
-          onClick={() => {
-            audioSynth.playClickSound();
-            onOpenDossier();
-          }}
-          title="Executive Financial Dossier & Boardroom Memorandum"
-          className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full bg-[#1A1A1C] hover:bg-[#27272A] text-gray-200 border border-[#333335] hover:border-amber-500/50 transition-all shadow-sm"
-        >
-          <FileText className="w-3.5 h-3.5 text-amber-400" />
-          <span>{t.dossier_btn}</span>
-        </button>
-
-        {/* Audio / Ambient Music Control Dropdown */}
+        {/* Audio Engine Dropdown */}
         <div className="relative">
           <button
-            onClick={() => {
-              audioSynth.playClickSound();
-              setShowAudioMenu(!showAudioMenu);
-            }}
+            onClick={() => toggleDropdown('audio')}
             title="Executive Soundtrack & Ambient Audio Engine"
             className={`p-2 rounded-full transition-colors flex items-center gap-1 ${
               audioSettings.isPlaying 
@@ -313,7 +590,7 @@ export const Header: React.FC<HeaderProps> = ({
             {audioSettings.isPlaying ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
           </button>
 
-          {showAudioMenu && (
+          {openDropdown === 'audio' && (
             <div className="absolute right-0 mt-2 w-64 bg-[#141416] border border-[#27272A] rounded-xl shadow-2xl p-4 z-50">
               <div className="flex items-center justify-between mb-3 pb-2 border-b border-[#27272A]">
                 <span className="text-xs font-bold text-white flex items-center gap-1.5">
@@ -371,7 +648,7 @@ export const Header: React.FC<HeaderProps> = ({
 
               {/* Voice Narration */}
               <div className="pt-2 border-t border-[#27272A]">
-                <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center justify-between">
                   <span className="text-xs text-gray-300 flex items-center gap-1">
                     {audioSettings.voiceNarrationEnabled ? <Mic className="w-3 h-3 text-emerald-400" /> : <MicOff className="w-3 h-3 text-gray-500" />}
                     Voice Narration
@@ -392,59 +669,6 @@ export const Header: React.FC<HeaderProps> = ({
           )}
         </div>
 
-        {/* AI Advisor Q&A Trigger Button */}
-        {onOpenAiQna && (
-          <button
-            id="header-ai-qna-btn"
-            onClick={() => {
-              audioSynth.playClickSound();
-              onOpenAiQna();
-            }}
-            title="Ask AI Advisor about current slide financial data (Gemini)"
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-full bg-[#1A1A1C] hover:bg-[#27272A] text-amber-400 border border-amber-500/40 hover:border-amber-500 transition-all shadow-sm"
-          >
-            <Bot className="w-3.5 h-3.5 text-amber-400" />
-            <span className="hidden sm:inline">{t.ask_ai}</span>
-          </button>
-        )}
-
-        {/* Portal Web Advertising & Integration Modal */}
-        <button
-          onClick={() => {
-            audioSynth.playClickSound();
-            onOpenPortalModal();
-          }}
-          title="Embed Dynamic Financial Widgets & Visit Portal"
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full bg-[#1A1A1C] hover:bg-[#27272A] text-gray-200 border border-[#333335] hover:border-amber-500/50 hover:text-amber-300 transition-all shadow-sm"
-        >
-          <Globe className="w-3.5 h-3.5 text-amber-500" />
-          <span className="hidden md:inline">KBOX HUB IA</span>
-        </button>
-
-        {/* Export to PowerPoint (PPTX) Button */}
-        <button
-          id="header-export-pptx-btn"
-          onClick={handlePptxExport}
-          disabled={isExportingPptx}
-          title="Descargar presentación completa en formato PowerPoint (.pptx) con todas las láminas"
-          className="flex items-center gap-1.5 px-3.5 sm:px-4 py-1.5 text-xs font-bold rounded-full bg-amber-500 hover:bg-amber-400 text-black shadow-md transition-all disabled:opacity-50"
-        >
-          <Presentation className="w-3.5 h-3.5 stroke-[2.5]" />
-          <span>{isExportingPptx ? t.export_pptx_loading : t.export_pptx}</span>
-        </button>
-
-        {/* Export to PDF Button */}
-        <button
-          id="header-export-pdf-btn"
-          onClick={handlePdfExport}
-          disabled={isExporting}
-          title="Export formatted executive PDF report of presentation slides & financial data"
-          className="flex items-center gap-1.5 px-3.5 sm:px-4 py-1.5 text-xs font-bold rounded-full bg-white hover:bg-gray-200 text-black shadow-md transition-all disabled:opacity-50"
-        >
-          <FileText className="w-3.5 h-3.5 stroke-[2.5]" />
-          <span>{isExporting ? t.export_pdf_loading : t.export_pdf}</span>
-        </button>
-
         {/* Fullscreen Toggle */}
         <button
           onClick={() => {
@@ -456,6 +680,7 @@ export const Header: React.FC<HeaderProps> = ({
         >
           {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
         </button>
+
       </div>
     </header>
   );

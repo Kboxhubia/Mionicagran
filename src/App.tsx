@@ -16,6 +16,7 @@ import { AiQnaSidebar } from './components/AiQnaSidebar';
 import { AiFloatingButton } from './components/AiFloatingButton';
 import { TrendRadarModal } from './components/TrendRadarModal';
 import { PythonSandboxModal } from './components/PythonSandboxModal';
+import { ExecutiveFeedbackModal } from './components/ExecutiveFeedbackModal';
 import { audioSynth } from './services/audioSynth';
 import { UI_TRANSLATIONS } from './services/i18n';
 import { Sparkles } from 'lucide-react';
@@ -53,6 +54,7 @@ export default function App() {
   const [isAiQnaOpen, setIsAiQnaOpen] = useState<boolean>(false);
   const [isTrendRadarOpen, setIsTrendRadarOpen] = useState<boolean>(false);
   const [isPythonSuiteOpen, setIsPythonSuiteOpen] = useState<boolean>(false);
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState<boolean>(false);
 
   const t = UI_TRANSLATIONS[lang];
 
@@ -99,6 +101,7 @@ export default function App() {
         onOpenAiQna={() => setIsAiQnaOpen(true)}
         onOpenTrendRadar={() => setIsTrendRadarOpen(true)}
         onOpenPythonSuite={() => setIsPythonSuiteOpen(true)}
+        onOpenFeedback={() => setIsFeedbackOpen(true)}
         isFullscreen={isFullscreen}
         onToggleFullscreen={toggleFullscreen}
         currentSlideIndex={currentSlideIndex}
@@ -206,6 +209,13 @@ export default function App() {
       <PythonSandboxModal
         isOpen={isPythonSuiteOpen}
         onClose={() => setIsPythonSuiteOpen(false)}
+        lang={lang}
+      />
+
+      {/* Executive C-Suite Forum & Q&A Modal */}
+      <ExecutiveFeedbackModal
+        isOpen={isFeedbackOpen}
+        onClose={() => setIsFeedbackOpen(false)}
         lang={lang}
       />
 

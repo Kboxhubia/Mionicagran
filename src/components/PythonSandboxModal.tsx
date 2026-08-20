@@ -5,7 +5,6 @@ import {
   Play,
   Copy,
   Check,
-  Download,
   X,
   Code2,
   Cpu,
@@ -72,17 +71,6 @@ export const PythonSandboxModal: React.FC<PythonSandboxModalProps> = ({
       setCopiedOutput(true);
       setTimeout(() => setCopiedOutput(false), 2000);
     }
-  };
-
-  const handleDownloadPy = () => {
-    audioSynth.playClickSound();
-    const element = document.createElement('a');
-    const file = new Blob([customCode], { type: 'text/plain' });
-    element.href = URL.createObjectURL(file);
-    element.download = `${selectedPreset.id}_kboxhubia.py`;
-    document.body.appendChild(element);
-    element.click();
-    document.body.removeChild(element);
   };
 
   return (
@@ -184,14 +172,6 @@ export const PythonSandboxModal: React.FC<PythonSandboxModalProps> = ({
                   >
                     {copiedCode ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                     <span>{copiedCode ? t.copied : t.copy}</span>
-                  </button>
-
-                  <button
-                    onClick={handleDownloadPy}
-                    className="flex items-center gap-1 px-2.5 py-1 text-xs text-gray-300 hover:text-white bg-[#1A1A1D] hover:bg-[#27272A] border border-[#333] rounded-lg transition-colors"
-                  >
-                    <Download className="w-3.5 h-3.5 text-amber-400" />
-                    <span>{t.download_code}</span>
                   </button>
 
                   <button
