@@ -25,12 +25,18 @@ import {
   DollarSign,
   Layers,
   ArrowRight,
-  TrendingUp
+  TrendingUp,
+  Crown,
+  Lock,
+  User,
+  Shield,
+  LogIn
 } from 'lucide-react';
 import { AudioSettings, PredictiveAlert, Language } from '../types';
 import { exportExecutivePdfReport } from '../services/pdfExporter';
 import { exportPowerPointPresentation } from '../services/pptxExporter';
 import { audioSynth } from '../services/audioSynth';
+import { authService, AuthUser } from '../services/authService';
 import { UI_TRANSLATIONS } from '../services/i18n';
 
 interface HeaderProps {
@@ -50,6 +56,7 @@ interface HeaderProps {
   onOpenCommunity?: () => void;
   onOpenCommunityBridge?: () => void;
   onOpenAdmin?: () => void;
+  onOpenAuthModal?: () => void;
   isFullscreen: boolean;
   onToggleFullscreen: () => void;
   currentSlideIndex: number;
@@ -73,11 +80,24 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenCommunity,
   onOpenCommunityBridge,
   onOpenAdmin,
+  onOpenAuthModal,
   isFullscreen,
   onToggleFullscreen,
   currentSlideIndex,
   totalSlides
 }) => {
+  // Auth state
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => authService.getCurrentUser());
+
+  useEffect(() => {
+    const unsub = authService.subscribe((u) => {
+      setCurrentUser(u);
+    });
+    return () => unsub();
+  }, []);
+
+  const isAdmin = authService.isAdmin();
+
   // Dropdown states for the 3 master blocks
   const [openDropdown, setOpenDropdown] = useState<'finance' | 'compute' | 'publish' | 'audio' | 'lang' | null>(null);
   const [isExporting, setIsExporting] = useState(false);
@@ -517,17 +537,33 @@ export const Header: React.FC<HeaderProps> = ({
                     audioSynth.playClickSound();
                     onOpenCommunityBridge();
                   }}
-                  className="w-full text-left p-2.5 rounded-xl hover:bg-[#202024] text-gray-200 hover:text-white transition-all flex items-start gap-3 group bg-emerald-950/20 border border-emerald-800/30"
+                  className={`w-full text-left p-2.5 rounded-xl transition-all flex items-start gap-3 group border ${
+                    isAdmin 
+                      ? 'bg-emerald-950/20 border-emerald-800/30 text-gray-200 hover:text-white hover:bg-[#202024]'
+                      : 'bg-[#141417] border-[#25252B] text-gray-400 hover:text-gray-200 hover:bg-[#1A1A1E]'
+                  }`}
                 >
-                  <div className="p-2 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 group-hover:scale-105 transition-transform">
-                    <Radio className="w-4 h-4 animate-pulse" />
+                  <div className={`p-2 rounded-lg transition-transform ${
+                    isAdmin 
+                      ? 'bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 group-hover:scale-105'
+                      : 'bg-gray-800/40 border border-gray-700/40 text-gray-500'
+                  }`}>
+                    {isAdmin ? <Radio className="w-4 h-4 animate-pulse" /> : <Lock className="w-4 h-4" />}
                   </div>
                   <div>
-                    <div className="text-xs font-bold text-emerald-300 flex items-center gap-1.5">
-                      <span>{lang === 'es' ? 'Community Bridge (WhatsApp)' : 'Community Bridge (WhatsApp)'}</span>
-                      <span className="text-[9px] px-1 rounded bg-emerald-500 text-black font-mono font-bold">Auto-Sync</span>
+                    <div className="text-xs font-bold flex items-center gap-1.5">
+                      <span className={isAdmin ? 'text-emerald-300' : 'text-gray-300'}>
+                        {lang === 'es' ? 'Community Bridge (WhatsApp)' : 'Community Bridge (WhatsApp)'}
+                      </span>
+                      {isAdmin ? (
+                        <span className="text-[9px] px-1 rounded bg-emerald-500 text-black font-mono font-bold">Auto-Sync</span>
+                      ) : (
+                        <span className="text-[9px] px-1 rounded bg-amber-950/80 text-amber-400 font-mono flex items-center gap-0.5">
+                          <Crown className="w-2.5 h-2.5" /> Admin Only
+                        </span>
+                      )}
                     </div>
-                    <div className="text-[11px] text-gray-300 leading-tight mt-0.5">
+                    <div className="text-[11px] text-gray-400 leading-tight mt-0.5">
                       {lang === 'es' ? 'Difusión de tendencias y funnel de consultas al cerebro IA' : 'Trend distribution & query learning funnel into AI brain'}
                     </div>
                   </div>
@@ -565,15 +601,33 @@ export const Header: React.FC<HeaderProps> = ({
                     audioSynth.playClickSound();
                     onOpenAdmin();
                   }}
-                  className="w-full text-left p-2.5 rounded-xl hover:bg-[#202024] text-gray-200 hover:text-white transition-all flex items-start gap-3 group border-t border-[#222228] mt-1"
+                  className={`w-full text-left p-2.5 rounded-xl transition-all flex items-start gap-3 group border-t border-[#222228] mt-1 ${
+                    isAdmin 
+                      ? 'hover:bg-[#202024] text-gray-200 hover:text-white'
+                      : 'hover:bg-[#1A1A1F] text-gray-400'
+                  }`}
                 >
-                  <div className="p-2 rounded-lg bg-amber-950/60 border border-amber-700/50 text-amber-400 group-hover:scale-105 transition-transform">
-                    <Bot className="w-4 h-4" />
+                  <div className={`p-2 rounded-lg transition-transform ${
+                    isAdmin
+                      ? 'bg-amber-950/60 border border-amber-700/50 text-amber-400 group-hover:scale-105'
+                      : 'bg-[#18181C] border border-[#2D2D35] text-gray-500'
+                  }`}>
+                    {isAdmin ? <Bot className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
                   </div>
                   <div>
-                    <div className="text-xs font-bold text-white flex items-center gap-1.5">
-                      <span>{lang === 'es' ? 'Admin Dashboard (15 Temas)' : 'Admin Dashboard'}</span>
-                      <span className="text-[9px] px-1 rounded bg-amber-950 text-amber-300 font-mono">Master</span>
+                    <div className="text-xs font-bold flex items-center gap-1.5">
+                      <span className={isAdmin ? 'text-white' : 'text-gray-300'}>
+                        {lang === 'es' ? 'Admin Dashboard (15 Temas)' : 'Admin Dashboard'}
+                      </span>
+                      {isAdmin ? (
+                        <span className="text-[9px] px-1 rounded bg-amber-500 text-black font-mono font-bold flex items-center gap-0.5">
+                          <Crown className="w-2.5 h-2.5" /> MASTER
+                        </span>
+                      ) : (
+                        <span className="text-[9px] px-1 rounded bg-amber-950/60 text-amber-400 font-mono flex items-center gap-0.5">
+                          <Crown className="w-2.5 h-2.5" /> Admin Only
+                        </span>
+                      )}
                     </div>
                     <div className="text-[11px] text-gray-400 leading-tight mt-0.5">
                       {lang === 'es' ? 'Autorizar temas, base de leads y memoria RAG' : 'Authorize topics, leads database & RAG memory'}
@@ -592,19 +646,85 @@ export const Header: React.FC<HeaderProps> = ({
               audioSynth.playClickSound();
               onOpenCommunityBridge();
             }}
-            title="Kbox Community Bridge • WhatsApp Autonomous Distribution & AI Learning"
-            className="hidden md:flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-full bg-emerald-950/40 hover:bg-emerald-900/50 text-emerald-300 border border-emerald-500/40 hover:border-emerald-400 transition-all shadow-sm group"
+            title={isAdmin ? "Kbox Community Bridge • WhatsApp Autonomous Distribution & AI Learning" : "Kbox Community Bridge (Admin Exclusivo)"}
+            className={`hidden md:flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-full transition-all shadow-sm group border ${
+              isAdmin 
+                ? 'bg-emerald-950/40 hover:bg-emerald-900/50 text-emerald-300 border-emerald-500/40 hover:border-emerald-400'
+                : 'bg-[#18181D] hover:bg-[#202026] text-gray-300 border-[#2D2D35]'
+            }`}
           >
-            <Radio className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
+            {isAdmin ? (
+              <Radio className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
+            ) : (
+              <Lock className="w-3.5 h-3.5 text-amber-400/80" />
+            )}
             <span className="tracking-tight">WhatsApp Bridge</span>
-            <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+            {isAdmin ? (
+              <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+            ) : (
+              <span className="text-[9px] px-1 rounded bg-amber-500/20 text-amber-300 font-mono">Admin</span>
+            )}
           </button>
         )}
 
       </div>
 
-      {/* Right Toolbar: Language, Audio Engine, Fullscreen */}
+      {/* Right Toolbar: User Identity, Language, Audio Engine, Fullscreen */}
       <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+        
+        {/* User Identity / Auth Profile Button */}
+        {onOpenAuthModal && (
+          <button
+            id="header-user-auth-btn"
+            onClick={() => {
+              audioSynth.playClickSound();
+              onOpenAuthModal();
+            }}
+            title={
+              currentUser?.role === 'admin'
+                ? '👑 Sesión de Administrador Activa (Ing. Jorge Huerta) • Clic para ver perfil'
+                : currentUser
+                ? `Sesión activa: ${currentUser.name} (${currentUser.role}) • Clic para ver perfil`
+                : 'Iniciar Sesión con Google / WhatsApp'
+            }
+            className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1 text-xs font-bold rounded-full border transition-all shadow-sm ${
+              currentUser?.role === 'admin'
+                ? 'bg-gradient-to-r from-amber-500/20 to-amber-600/20 hover:from-amber-500/30 hover:to-amber-600/30 border-amber-500/50 text-amber-300 shadow-amber-950/30'
+                : currentUser
+                ? 'bg-emerald-950/40 hover:bg-emerald-900/40 border-emerald-500/40 text-emerald-300'
+                : 'bg-[#18181D] hover:bg-[#23232A] border-[#303038] text-gray-300 hover:text-white'
+            }`}
+          >
+            {currentUser?.role === 'admin' ? (
+              <>
+                <Crown className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                <span className="hidden sm:inline font-mono text-[11px] text-amber-300 max-w-[130px] truncate">
+                  Ing. Jorge Huerta
+                </span>
+                <span className="text-[9px] px-1 py-0.2 rounded bg-amber-500 text-black font-bold">
+                  ADMIN
+                </span>
+              </>
+            ) : currentUser ? (
+              <>
+                <User className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                <span className="hidden sm:inline font-mono text-[11px] text-emerald-300 max-w-[110px] truncate">
+                  {currentUser.name.split(' ')[0]}
+                </span>
+                <span className="text-[9px] px-1 py-0.2 rounded bg-emerald-500/30 text-emerald-300 font-mono font-bold">
+                  FREE
+                </span>
+              </>
+            ) : (
+              <>
+                <LogIn className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                <span className="text-[11px] text-gray-200">
+                  {lang === 'es' ? 'Acceder' : 'Sign In'}
+                </span>
+              </>
+            )}
+          </button>
+        )}
         
         {/* Language Selector Dropdown */}
         <div className="relative">

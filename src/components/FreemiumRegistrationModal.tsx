@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { ADMIN_PHONE_NUMBER, WHATSAPP_GROUP_NAME, WHATSAPP_DIRECT_LINK } from '../data/communityData';
 import { agentEngine } from '../services/agentEngine';
+import { authService } from '../services/authService';
 import { audioSynth } from '../services/audioSynth';
 import { exportExecutivePdfReport } from '../services/pdfExporter';
 
@@ -85,12 +86,15 @@ export const FreemiumRegistrationModal: React.FC<FreemiumRegistrationModalProps>
       // 1. Register in Agent Engine Lead Registry
       agentEngine.registerLead(contactInput.trim(), selectedRole, 'Modal Freemium 7s Avatar');
 
-      // 2. Mark registered
+      // 2. Authenticate session with role evaluation
+      await authService.registerFreemiumQuick(contactInput.trim(), selectedRole);
+
+      // 3. Mark registered
       setIsRegistered(true);
       setIsLocked(false);
       onSuccessUnlock();
 
-      // 3. Dispatch Gift PDF automatically
+      // 4. Dispatch Gift PDF automatically
       try {
         await exportExecutivePdfReport();
       } catch (err) {

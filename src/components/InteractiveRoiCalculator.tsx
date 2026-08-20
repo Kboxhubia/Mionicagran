@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Calculator, 
   X, 
@@ -14,7 +14,9 @@ import {
   ShieldCheck,
   Sliders,
   Calendar,
-  Eye
+  Eye,
+  RotateCcw,
+  Save
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -32,6 +34,53 @@ import {
 import { exportExecutivePdfReport } from '../services/pdfExporter';
 import { audioSynth } from '../services/audioSynth';
 
+export interface RoiCalculatorInputs {
+  monthlyCloudSpend: number;
+  hardwareCapex: number;
+  monthlyElectricity: number;
+  monthlyMlOps: number;
+  timelineHorizon: 36 | 12;
+}
+
+export const DEFAULT_ROI_INPUTS: RoiCalculatorInputs = {
+  monthlyCloudSpend: 15000, // $15,000/mo ($180k/yr)
+  hardwareCapex: 48000,    // $48,000 (4x L40S)
+  monthlyElectricity: 650, // Power & Datacenter
+  monthlyMlOps: 2000,      // MLOps amortized
+  timelineHorizon: 36      // 36-Month vs 12-Month
+};
+
+const STORAGE_KEY = 'kbox_roi_calculator_inputs';
+
+function loadSavedRoiInputs(): RoiCalculatorInputs {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      return {
+        monthlyCloudSpend: typeof parsed.monthlyCloudSpend === 'number' && !isNaN(parsed.monthlyCloudSpend) && parsed.monthlyCloudSpend >= 1000
+          ? parsed.monthlyCloudSpend
+          : DEFAULT_ROI_INPUTS.monthlyCloudSpend,
+        hardwareCapex: typeof parsed.hardwareCapex === 'number' && !isNaN(parsed.hardwareCapex) && parsed.hardwareCapex >= 5000
+          ? parsed.hardwareCapex
+          : DEFAULT_ROI_INPUTS.hardwareCapex,
+        monthlyElectricity: typeof parsed.monthlyElectricity === 'number' && !isNaN(parsed.monthlyElectricity)
+          ? parsed.monthlyElectricity
+          : DEFAULT_ROI_INPUTS.monthlyElectricity,
+        monthlyMlOps: typeof parsed.monthlyMlOps === 'number' && !isNaN(parsed.monthlyMlOps)
+          ? parsed.monthlyMlOps
+          : DEFAULT_ROI_INPUTS.monthlyMlOps,
+        timelineHorizon: parsed.timelineHorizon === 12 || parsed.timelineHorizon === 36
+          ? parsed.timelineHorizon
+          : DEFAULT_ROI_INPUTS.timelineHorizon
+      };
+    }
+  } catch {
+    // fallback
+  }
+  return DEFAULT_ROI_INPUTS;
+}
+
 interface InteractiveRoiCalculatorProps {
   isOpen: boolean;
   onClose: () => void;
@@ -41,13 +90,42 @@ export const InteractiveRoiCalculator: React.FC<InteractiveRoiCalculatorProps> =
   isOpen,
   onClose
 }) => {
-  // Configurable CFO Parameters
-  const [monthlyCloudSpend, setMonthlyCloudSpend] = useState<number>(15000); // $15,000/mo ($180k/yr)
-  const [hardwareCapex, setHardwareCapex] = useState<number>(48000); // $48,000 (4x L40S)
-  const [monthlyElectricity, setMonthlyElectricity] = useState<number>(650); // Power & Datacenter
-  const [monthlyMlOps, setMonthlyMlOps] = useState<number>(2000); // MLOps amortized
-  const [timelineHorizon, setTimelineHorizon] = useState<36 | 12>(36); // 36-Month vs 12-Month
+  // Configurable CFO Parameters with Browser Storage Persistence
+  const [monthlyCloudSpend, setMonthlyCloudSpend] = useState<number>(() => loadSavedRoiInputs().monthlyCloudSpend);
+  const [hardwareCapex, setHardwareCapex] = useState<number>(() => loadSavedRoiInputs().hardwareCapex);
+  const [monthlyElectricity, setMonthlyElectricity] = useState<number>(() => loadSavedRoiInputs().monthlyElectricity);
+  const [monthlyMlOps, setMonthlyMlOps] = useState<number>(() => loadSavedRoiInputs().monthlyMlOps);
+  const [timelineHorizon, setTimelineHorizon] = useState<36 | 12>(() => loadSavedRoiInputs().timelineHorizon);
   const [isExporting, setIsExporting] = useState<boolean>(false);
+  const [isSavedIndicator, setIsSavedIndicator] = useState<boolean>(false);
+
+  // Auto-persist inputs to browser localStorage
+  useEffect(() => {
+    try {
+      const payload: RoiCalculatorInputs = {
+        monthlyCloudSpend,
+        hardwareCapex,
+        monthlyElectricity,
+        monthlyMlOps,
+        timelineHorizon
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+      setIsSavedIndicator(true);
+      const timer = setTimeout(() => setIsSavedIndicator(false), 2000);
+      return () => clearTimeout(timer);
+    } catch {
+      // ignore storage errors
+    }
+  }, [monthlyCloudSpend, hardwareCapex, monthlyElectricity, monthlyMlOps, timelineHorizon]);
+
+  const handleResetDefaults = () => {
+    audioSynth.playClickSound();
+    setMonthlyCloudSpend(DEFAULT_ROI_INPUTS.monthlyCloudSpend);
+    setHardwareCapex(DEFAULT_ROI_INPUTS.hardwareCapex);
+    setMonthlyElectricity(DEFAULT_ROI_INPUTS.monthlyElectricity);
+    setMonthlyMlOps(DEFAULT_ROI_INPUTS.monthlyMlOps);
+    setTimelineHorizon(DEFAULT_ROI_INPUTS.timelineHorizon);
+  };
 
   if (!isOpen) return null;
 
@@ -204,10 +282,28 @@ export const InteractiveRoiCalculator: React.FC<InteractiveRoiCalculatorProps> =
           
           {/* Left Column: Sliders & Inputs (5 Cols) */}
           <div className="lg:col-span-5 space-y-4 bg-[#0E0E10] p-4 rounded-xl border border-[#27272A]">
-            <h3 className="text-xs font-bold uppercase tracking-widest text-amber-500 flex items-center gap-1.5">
-              <Sliders className="w-3.5 h-3.5 text-amber-400" />
-              Adjust Enterprise Parameters
-            </h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-amber-500 flex items-center gap-1.5">
+                <Sliders className="w-3.5 h-3.5 text-amber-400" />
+                Adjust Enterprise Parameters
+              </h3>
+              <div className="flex items-center gap-2">
+                {isSavedIndicator && (
+                  <span className="flex items-center gap-1 text-[10px] text-emerald-400 font-mono animate-fade-in">
+                    <CheckCircle2 className="w-3 h-3" />
+                    Saved
+                  </span>
+                )}
+                <button
+                  onClick={handleResetDefaults}
+                  title="Reset to default baseline parameters"
+                  className="flex items-center gap-1 text-[10px] text-gray-400 hover:text-white bg-[#1A1A1D] hover:bg-[#26262B] px-2 py-0.5 rounded border border-[#333338] transition-colors"
+                >
+                  <RotateCcw className="w-2.5 h-2.5" />
+                  <span>Reset</span>
+                </button>
+              </div>
+            </div>
 
             {/* Slider 1: Monthly Cloud AI Spend */}
             <div>

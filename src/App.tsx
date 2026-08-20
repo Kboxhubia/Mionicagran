@@ -21,15 +21,63 @@ import { FreemiumRegistrationModal } from './components/FreemiumRegistrationModa
 import { CommunityHubModal } from './components/CommunityHubModal';
 import { CommunityBridgeModal } from './components/CommunityBridgeModal';
 import { AdminDashboardModal } from './components/AdminDashboardModal';
+import { AuthModal } from './components/AuthModal';
+import { AdminAccessDeniedModal } from './components/AdminAccessDeniedModal';
+import { authService } from './services/authService';
 import { audioSynth } from './services/audioSynth';
 import { UI_TRANSLATIONS } from './services/i18n';
 import { Sparkles } from 'lucide-react';
 
 export default function App() {
-  const [lang, setLang] = useState<Language>('es');
+  const [lang, setLang] = useState<Language>(() => {
+    try {
+      const savedLang = localStorage.getItem('kbox_presentation_lang');
+      if (savedLang === 'es' || savedLang === 'en' || savedLang === 'pt') {
+        return savedLang;
+      }
+    } catch {
+      // fallback
+    }
+    return 'es';
+  });
+
   const [slides, setSlides] = useState<SlideData[]>(SLIDES_DATA);
-  const [currentSlideIndex, setCurrentSlideIndex] = useState<number>(0);
+  
+  // Persisted presentation progress (slide index)
+  const [currentSlideIndex, setCurrentSlideIndex] = useState<number>(() => {
+    try {
+      const savedSlide = localStorage.getItem('kbox_presentation_current_slide');
+      if (savedSlide !== null) {
+        const parsed = parseInt(savedSlide, 10);
+        if (!isNaN(parsed) && parsed >= 0 && parsed < SLIDES_DATA.length) {
+          return parsed;
+        }
+      }
+    } catch {
+      // fallback
+    }
+    return 0;
+  });
+
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+
+  // Sync current slide index to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('kbox_presentation_current_slide', currentSlideIndex.toString());
+    } catch {
+      // ignore
+    }
+  }, [currentSlideIndex]);
+
+  // Sync language to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('kbox_presentation_lang', lang);
+    } catch {
+      // ignore
+    }
+  }, [lang]);
 
   // Audio & Ambient Music State
   const [audioSettings, setAudioSettings] = useState<AudioSettings>({
@@ -64,6 +112,19 @@ export default function App() {
   const [isAdminOpen, setIsAdminOpen] = useState<boolean>(false);
   const [isFreemiumModalOpen, setIsFreemiumModalOpen] = useState<boolean>(false);
   const [isSubscribedUnlocked, setIsSubscribedUnlocked] = useState<boolean>(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
+  const [isAdminDeniedModalOpen, setIsAdminDeniedModalOpen] = useState<boolean>(false);
+  const [deniedFeatureName, setDeniedFeatureName] = useState<string>('Admin Dashboard & Community Bridge');
+
+  // Guarded Admin feature access handler
+  const handleRequestAdminAccess = (featureName: string, onAuthorized: () => void) => {
+    if (authService.isAdmin()) {
+      onAuthorized();
+    } else {
+      setDeniedFeatureName(featureName);
+      setIsAdminDeniedModalOpen(true);
+    }
+  };
 
   // 7-second auto popup for DeepTech Avatars & Subscription
   useEffect(() => {
@@ -124,8 +185,19 @@ export default function App() {
         onOpenPythonSuite={() => setIsPythonSuiteOpen(true)}
         onOpenFeedback={() => setIsFeedbackOpen(true)}
         onOpenCommunity={() => setIsCommunityOpen(true)}
-        onOpenCommunityBridge={() => setIsCommunityBridgeOpen(true)}
-        onOpenAdmin={() => setIsAdminOpen(true)}
+        onOpenCommunityBridge={() => 
+          handleRequestAdminAccess(
+            lang === 'es' ? 'Kbox Community Bridge (WhatsApp & Distribución)' : 'Kbox Community Bridge',
+            () => setIsCommunityBridgeOpen(true)
+          )
+        }
+        onOpenAdmin={() => 
+          handleRequestAdminAccess(
+            lang === 'es' ? 'Admin Dashboard (15 Temas & Leads)' : 'Admin Dashboard',
+            () => setIsAdminOpen(true)
+          )
+        }
+        onOpenAuthModal={() => setIsAuthModalOpen(true)}
         isFullscreen={isFullscreen}
         onToggleFullscreen={toggleFullscreen}
         currentSlideIndex={currentSlideIndex}
@@ -250,11 +322,17 @@ export default function App() {
         lang={lang}
         onOpenAdmin={() => {
           setIsCommunityOpen(false);
-          setIsAdminOpen(true);
+          handleRequestAdminAccess(
+            lang === 'es' ? 'Admin Dashboard (15 Temas & Leads)' : 'Admin Dashboard',
+            () => setIsAdminOpen(true)
+          );
         }}
         onOpenCommunityBridge={() => {
           setIsCommunityOpen(false);
-          setIsCommunityBridgeOpen(true);
+          handleRequestAdminAccess(
+            lang === 'es' ? 'Kbox Community Bridge (WhatsApp & Distribución)' : 'Community Bridge',
+            () => setIsCommunityBridgeOpen(true)
+          );
         }}
       />
 
@@ -282,6 +360,28 @@ export default function App() {
         onClose={() => setIsFreemiumModalOpen(false)}
         onSuccessUnlock={() => {
           setIsSubscribedUnlocked(true);
+        }}
+        lang={lang}
+      />
+
+      {/* User RBAC Authentication Modal (Google / Phone / WhatsApp) */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        lang={lang}
+        onLoginSuccess={() => {
+          setIsAuthModalOpen(false);
+        }}
+      />
+
+      {/* Admin Access Denied Gatekeeper Modal */}
+      <AdminAccessDeniedModal
+        isOpen={isAdminDeniedModalOpen}
+        onClose={() => setIsAdminDeniedModalOpen(false)}
+        featureName={deniedFeatureName}
+        onOpenAuthModal={() => {
+          setIsAdminDeniedModalOpen(false);
+          setIsAuthModalOpen(true);
         }}
         lang={lang}
       />
