@@ -1,7 +1,9 @@
 import pptxgen from 'pptxgenjs';
 import { SLIDES_DATA } from '../data/slidesData';
+import { Language } from '../types';
+import { getLocalizedSlide } from './i18n';
 
-export async function exportPowerPointPresentation() {
+export async function exportPowerPointPresentation(lang: Language = 'es') {
   const pptx = new pptxgen();
 
   // Set 16:9 Widescreen Layout
@@ -24,11 +26,12 @@ export async function exportPowerPointPresentation() {
 
   // Build each slide from SLIDES_DATA
   SLIDES_DATA.forEach((slideData, index) => {
+    const loc = getLocalizedSlide(slideData, lang);
     const slide = pptx.addSlide();
     slide.background = { color: COLOR_BG };
 
     // Speaker Notes (Presenter View)
-    const speakerNotes = `[Slide ${slideData.id}: ${slideData.title}]\n\nNarration (ES):\n${slideData.narration.es}\n\nNarration (EN):\n${slideData.narration.en}\n\nKey Takeaway:\n${slideData.takeaway}`;
+    const speakerNotes = `[Slide ${slideData.id}: ${loc.title}]\n\nNarration (${lang.toUpperCase()}):\n${slideData.narration?.[lang] || slideData.narration?.es || ''}\n\nKey Takeaway:\n${loc.takeaway}`;
     slide.addNotes(speakerNotes);
 
     // Top Header Banner
@@ -41,7 +44,7 @@ export async function exportPowerPointPresentation() {
     });
 
     // Category / Badge Tag (Top Left)
-    slide.addText(`SLIDE ${slideData.id} OF ${SLIDES_DATA.length} • ${slideData.badge.toUpperCase()}`, {
+    slide.addText(`SLIDE ${slideData.id} OF ${SLIDES_DATA.length} • ${loc.badge.toUpperCase()}`, {
       x: 0.6,
       y: 0.5,
       w: 8.0,

@@ -270,6 +270,34 @@ class AudioSynthesizer {
     }
   }
 
+  public playAlertChime() {
+    this.playTone(660, 0.15, 'triangle', 0.12);
+  }
+
+  public playTone(freq: number = 440, duration: number = 0.2, type: OscillatorType = 'sine', gainVal: number = 0.1) {
+    this.initContext();
+    if (!this.ctx || !this.sfxGain) return;
+    try {
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, now);
+
+      gain.gain.setValueAtTime(gainVal, now);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+      osc.connect(gain);
+      gain.connect(this.sfxGain);
+
+      osc.start(now);
+      osc.stop(now + duration + 0.05);
+    } catch {
+      // Safe catch
+    }
+  }
+
   public playClickSound() {
     this.initContext();
     if (!this.ctx || !this.sfxGain) return;

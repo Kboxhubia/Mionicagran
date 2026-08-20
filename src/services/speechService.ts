@@ -1,4 +1,5 @@
 import { audioSynth } from './audioSynth';
+import { Language } from '../types';
 
 class SpeechService {
   private synth: SpeechSynthesis | null = null;
@@ -18,7 +19,7 @@ class SpeechService {
 
   public speak(
     text: string,
-    lang: 'es' | 'en' = 'es',
+    lang: Language = 'es',
     onEnd?: () => void
   ) {
     if (!this.synth) return;
@@ -30,14 +31,15 @@ class SpeechService {
     audioSynth.setDucking(true);
 
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = lang === 'es' ? 'es-ES' : 'en-US';
+    utterance.lang = lang === 'es' ? 'es-ES' : lang === 'pt' ? 'pt-BR' : 'en-US';
     utterance.rate = 1.02; // Professional executive pace
     utterance.pitch = 0.98; // Authoritative tone
 
     // Try to pick a polished voice if available
     const voices = this.synth.getVoices();
+    const prefix = lang === 'es' ? 'es' : lang === 'pt' ? 'pt' : 'en';
     const preferredVoice = voices.find(
-      v => (lang === 'es' ? v.lang.startsWith('es') : v.lang.startsWith('en')) &&
+      v => v.lang.startsWith(prefix) &&
            (v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('Premium'))
     );
     if (preferredVoice) {

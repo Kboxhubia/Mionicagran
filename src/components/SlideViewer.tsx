@@ -22,22 +22,31 @@ import {
   Bot,
   AlertOctagon,
   Sparkles,
-  ArrowRight
+  ArrowRight,
+  Flame,
+  Globe2
 } from 'lucide-react';
-import { SlideData } from '../types';
+import { SlideData, Language } from '../types';
 import { audioSynth } from '../services/audioSynth';
+import { getLocalizedSlide, UI_TRANSLATIONS } from '../services/i18n';
 
 interface SlideViewerProps {
   slide: SlideData;
+  lang?: Language;
   onOpenCalculator?: () => void;
   onOpenPortalModal?: () => void;
 }
 
 export const SlideViewer: React.FC<SlideViewerProps> = ({
   slide,
+  lang = 'es',
   onOpenCalculator,
   onOpenPortalModal
 }) => {
+  const currentLang = (lang || 'es') as Language;
+  const localized = getLocalizedSlide(slide, currentLang);
+  const t = UI_TRANSLATIONS[currentLang];
+
   return (
     <div className="w-full h-full flex flex-col justify-between p-4 sm:p-8 lg:p-10 text-gray-200 select-none relative overflow-hidden bg-[#161618]">
       
@@ -50,41 +59,41 @@ export const SlideViewer: React.FC<SlideViewerProps> = ({
       <div className="relative z-10 space-y-2">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <span className="px-3 py-1 text-[11px] font-bold uppercase tracking-widest rounded-full bg-[#1A1A1C] text-amber-400 border border-amber-500/30 shadow-sm">
-            {slide.badge}
+            {localized.badge}
           </span>
           <span className="text-xs font-mono text-gray-500">
-            {slide.variantNumber} • Ing. Jorge Huerta
+            {slide.variantNumber} • {t.author_name}
           </span>
         </div>
 
         <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight text-white leading-tight">
-          {slide.title}
+          {localized.title}
         </h1>
         <p className="text-xs sm:text-sm text-gray-400 font-normal max-w-4xl leading-relaxed">
-          {slide.subtitle}
+          {localized.subtitle}
         </p>
       </div>
 
       {/* Main Slide Content Canvas */}
       <div className="relative z-10 my-auto py-3">
-        {renderSlideBody(slide, onOpenCalculator, onOpenPortalModal)}
+        {renderSlideBody(slide, currentLang, onOpenCalculator, onOpenPortalModal)}
       </div>
 
       {/* Footer Executive Takeaway */}
       <div className="relative z-10 mt-auto pt-3 border-t border-[#27272A] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs">
         <div className="flex items-center gap-2 text-gray-300">
           <span className="font-bold text-amber-400 uppercase tracking-wider text-[11px]">
-            Key Takeaway:
+            {t.key_takeaway}:
           </span>
           <span className="text-gray-300 font-medium leading-snug">
-            {slide.takeaway}
+            {localized.takeaway}
           </span>
         </div>
 
         <div className="flex items-center gap-3 shrink-0 text-[11px] text-gray-500 font-mono">
-          <span className="text-amber-500">LinkedIn Executive Briefing</span>
+          <span className="text-amber-500">Executive Briefing</span>
           <span>•</span>
-          <span className="text-gray-400">August 2026</span>
+          <span className="text-gray-400">{lang === 'es' ? 'Agosto 2026' : lang === 'pt' ? 'Agosto 2026' : 'August 2026'}</span>
         </div>
       </div>
 
@@ -94,6 +103,7 @@ export const SlideViewer: React.FC<SlideViewerProps> = ({
 
 function renderSlideBody(
   slide: SlideData,
+  lang: Language,
   onOpenCalculator?: () => void,
   onOpenPortalModal?: () => void
 ) {
@@ -121,7 +131,7 @@ function renderSlideBody(
     case 'cta_contact':
       return <CtaContactSlide slide={slide} onOpenPortalModal={onOpenPortalModal} />;
     default:
-      return <DefaultSlide slide={slide} />;
+      return <DefaultDynamicSlide slide={slide} lang={lang} />;
   }
 }
 
@@ -1103,13 +1113,53 @@ const CtaContactSlide: React.FC<{ slide: SlideData; onOpenPortalModal?: () => vo
   );
 };
 
-/* Fallback default slide */
-const DefaultSlide: React.FC<{ slide: SlideData }> = ({ slide }) => {
+/* Dynamic / AI Generated Slide Component */
+const DefaultDynamicSlide: React.FC<{ slide: SlideData; lang: Language }> = ({ slide, lang }) => {
+  const localized = getLocalizedSlide(slide, lang);
+
   return (
-    <div className="space-y-4">
-      <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800">
-        <p className="text-base text-slate-200 leading-relaxed">{slide.subtitle}</p>
+    <div className="space-y-6">
+      {/* 3 Metrics Cards */}
+      {localized.metrics && localized.metrics.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {localized.metrics.map((metric, idx) => (
+            <div
+              key={idx}
+              className={`p-4 rounded-xl border backdrop-blur-sm ${
+                metric.highlight
+                  ? 'bg-amber-500/10 border-amber-500/40 text-amber-300 shadow-md shadow-amber-500/10'
+                  : 'bg-[#18181B]/80 border-[#27272A] text-slate-200'
+              }`}
+            >
+              <div className="text-xs text-gray-400 mb-1">{metric.label}</div>
+              <div className={`text-2xl font-bold font-mono ${
+                metric.color === 'emerald' ? 'text-emerald-400' :
+                metric.color === 'cyan' ? 'text-cyan-400' :
+                metric.color === 'rose' ? 'text-rose-400' : 'text-amber-400'
+              }`}>
+                {metric.value}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Bullets List & Insights */}
+      <div className="p-6 rounded-2xl bg-[#111114] border border-[#27272A] space-y-3">
+        <h4 className="text-xs font-mono font-bold uppercase text-amber-400 tracking-wider flex items-center gap-2">
+          <Sparkles className="w-4 h-4" />
+          {lang === 'es' ? 'Pilares Clave & Estrategia' : lang === 'pt' ? 'Pilares Chave & Estratégia' : 'Key Pillars & Strategy'}
+        </h4>
+        <div className="space-y-2.5">
+          {localized.bullets.map((bullet, idx) => (
+            <div key={idx} className="flex items-start gap-3 text-sm text-gray-300">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+              <span>{bullet}</span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
 };
+

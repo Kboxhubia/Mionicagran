@@ -1,3 +1,5 @@
+export type Language = 'es' | 'en' | 'pt';
+
 export interface SlideMetric {
   label: string;
   value: string;
@@ -6,22 +8,38 @@ export interface SlideMetric {
   highlight?: boolean;
 }
 
+export interface LocalizedSlideContent {
+  badge: string;
+  title: string;
+  subtitle: string;
+  takeaway: string;
+  bullets: string[];
+  metrics: SlideMetric[];
+  narration: string;
+}
+
 export interface SlideData {
   id: number;
   slug: string;
   variantNumber: string;
+  category: 'Strategic' | 'Financial' | 'Architecture' | 'Telecom' | 'MLOps' | 'Executive';
+  durationSec: number;
   badge: string;
   title: string;
   subtitle: string;
-  category: 'Strategic' | 'Financial' | 'Architecture' | 'Telecom' | 'MLOps' | 'Executive';
-  durationSec: number;
+  takeaway?: string;
+  bullets?: string[];
+  metrics?: SlideMetric[];
   narration: {
     es: string;
     en: string;
+    pt?: string;
   };
-  metrics?: SlideMetric[];
-  bullets?: string[];
-  takeaway?: string;
+  translations?: {
+    es: LocalizedSlideContent;
+    en: LocalizedSlideContent;
+    pt: LocalizedSlideContent;
+  };
   type: 
     | 'cover'
     | 'problem_cloud_drain'
@@ -33,7 +51,8 @@ export interface SlideData {
     | 'mlops_strategy'
     | 'hybrid_architecture'
     | 'executive_profile'
-    | 'cta_contact';
+    | 'cta_contact'
+    | 'dynamic_trend';
 }
 
 export interface PredictiveAlert {
@@ -46,6 +65,11 @@ export interface PredictiveAlert {
   metric: string;
   trend: 'up' | 'down' | 'neutral';
   recommendation: string;
+  translations?: {
+    es: { title: string; description: string; recommendation: string };
+    en: { title: string; description: string; recommendation: string };
+    pt: { title: string; description: string; recommendation: string };
+  };
 }
 
 export interface RoiSimulationParams {
@@ -63,6 +87,42 @@ export interface AudioSettings {
   theme: 'executive' | 'cyber' | 'minimal' | 'pulse';
   isPlaying: boolean;
   voiceNarrationEnabled: boolean;
-  voiceLanguage: 'es' | 'en';
+  voiceLanguage: Language;
   voiceVolume: number;
+}
+
+export type TrendPlatform = 'linkedin' | 'x' | 'hackernews' | 'arxiv' | 'reddit';
+export type TrendSector = 'entertainment' | 'science' | 'ai_world';
+
+export interface TrendSignal {
+  id: string;
+  platform: TrendPlatform;
+  sector: TrendSector;
+  title: string;
+  tag: string;
+  engagement: string;
+  growth: string;
+  summary: {
+    es: string;
+    en: string;
+    pt: string;
+  };
+  samplePrompt: {
+    es: string;
+    en: string;
+    pt: string;
+  };
+}
+
+export interface PythonSandboxPreset {
+  id: string;
+  title: string;
+  category: 'MonteCarlo' | 'VRAM' | 'Telecom' | 'DataViz' | 'MLOps' | 'Scraper' | 'LaTeX';
+  description: {
+    es: string;
+    en: string;
+    pt: string;
+  };
+  code: string;
+  outputPreview?: string;
 }

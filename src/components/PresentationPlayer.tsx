@@ -20,11 +20,12 @@ import {
   Presentation
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { SlideData, AudioSettings } from '../types';
+import { SlideData, AudioSettings, Language } from '../types';
 import { SlideViewer } from './SlideViewer';
 import { audioSynth } from '../services/audioSynth';
 import { speechService } from '../services/speechService';
 import { exportPowerPointPresentation } from '../services/pptxExporter';
+import { UI_TRANSLATIONS } from '../services/i18n';
 
 interface PresentationPlayerProps {
   slides: SlideData[];
@@ -32,9 +33,12 @@ interface PresentationPlayerProps {
   onSlideChange: (index: number) => void;
   audioSettings: AudioSettings;
   setAudioSettings: React.Dispatch<React.SetStateAction<AudioSettings>>;
+  lang: Language;
   onOpenCalculator: () => void;
   onOpenPortalModal: () => void;
 }
+
+export type TransitionEffect = 'slide' | 'fade' | 'zoom';
 
 export const PresentationPlayer: React.FC<PresentationPlayerProps> = ({
   slides,
@@ -42,6 +46,7 @@ export const PresentationPlayer: React.FC<PresentationPlayerProps> = ({
   onSlideChange,
   audioSettings,
   setAudioSettings,
+  lang = 'es',
   onOpenCalculator,
   onOpenPortalModal
 }) => {
@@ -52,12 +57,31 @@ export const PresentationPlayer: React.FC<PresentationPlayerProps> = ({
   const [showPresenterNotes, setShowPresenterNotes] = useState<boolean>(false);
   const [isLooping, setIsLooping] = useState<boolean>(true);
   const [isExportingPptx, setIsExportingPptx] = useState<boolean>(false);
+  const [transitionEffect, setTransitionEffect] = useState<TransitionEffect>('slide');
+  const [direction, setDirection] = useState<number>(1); // 1 = forward, -1 = backward
+  const prevSlideIndexRef = useRef<number>(currentSlideIndex);
+
+  const t = UI_TRANSLATIONS[lang];
+
+  // Track direction when slide changes
+  useEffect(() => {
+    if (currentSlideIndex !== prevSlideIndexRef.current) {
+      if (currentSlideIndex === 0 && prevSlideIndexRef.current === slides.length - 1) {
+        setDirection(1); // loop forward
+      } else if (currentSlideIndex === slides.length - 1 && prevSlideIndexRef.current === 0) {
+        setDirection(-1);
+      } else {
+        setDirection(currentSlideIndex > prevSlideIndexRef.current ? 1 : -1);
+      }
+      prevSlideIndexRef.current = currentSlideIndex;
+    }
+  }, [currentSlideIndex, slides.length]);
 
   const handlePptxExport = async () => {
     audioSynth.playClickSound();
     setIsExportingPptx(true);
     try {
-      await exportPowerPointPresentation();
+      await exportPowerPointPresentation(lang as Language);
     } finally {
       setIsExportingPptx(false);
     }
@@ -68,17 +92,16 @@ export const PresentationPlayer: React.FC<PresentationPlayerProps> = ({
   const progressIntervalRef = useRef<number | null>(null);
   const startTimeRef = useRef<number>(Date.now());
 
-  // Handle Speech Narration when slide changes
+  // Handle Speech Narration when slide changes or language changes
   useEffect(() => {
     if (audioSettings.voiceNarrationEnabled) {
-      const script = audioSettings.voiceLanguage === 'es'
-        ? currentSlide.narration.es
-        : currentSlide.narration.en;
-      speechService.speak(script, audioSettings.voiceLanguage);
+      const activeLang = (lang || 'es') as Language;
+      const script = currentSlide.narration?.[activeLang] || currentSlide.narration?.es || currentSlide.subtitle;
+      speechService.speak(script, activeLang);
     } else {
       speechService.stop();
     }
-  }, [currentSlideIndex, audioSettings.voiceNarrationEnabled, audioSettings.voiceLanguage]);
+  }, [currentSlideIndex, audioSettings.voiceNarrationEnabled, lang]);
 
   // Video Presentation Auto-Advancement & Progress Loop
   useEffect(() => {
@@ -172,6 +195,69 @@ export const PresentationPlayer: React.FC<PresentationPlayerProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [currentSlideIndex, isPlaying]);
 
+  // Executive Motion Transition Variants
+  const slideVariants = {
+    enter: (dir: number) => {
+      if (transitionEffect === 'fade') {
+        return { opacity: 0, scale: 0.99, y: 4, filter: 'blur(4px)' };
+      }
+      if (transitionEffect === 'zoom') {
+        return { opacity: 0, scale: 0.95, filter: 'blur(4px)' };
+      }
+      // Default: directional executive slide + subtle cross-fade + blur
+      return {
+        opacity: 0,
+        x: dir > 0 ? 36 : -36,
+        scale: 0.994,
+        filter: 'blur(3px)'
+      };
+    },
+    center: {
+      opacity: 1,
+      x: 0,
+      y: 0,
+      scale: 1,
+      filter: 'blur(0px)',
+      transition: {
+        x: { type: 'spring', stiffness: 280, damping: 28 },
+        scale: { duration: 0.35, ease: [0.16, 1, 0.3, 1] },
+        opacity: { duration: 0.3, ease: 'easeOut' },
+        filter: { duration: 0.25 }
+      }
+    },
+    exit: (dir: number) => {
+      if (transitionEffect === 'fade') {
+        return {
+          opacity: 0,
+          scale: 0.99,
+          y: -4,
+          filter: 'blur(4px)',
+          transition: { duration: 0.22, ease: [0.16, 1, 0.3, 1] }
+        };
+      }
+      if (transitionEffect === 'zoom') {
+        return {
+          opacity: 0,
+          scale: 1.03,
+          filter: 'blur(4px)',
+          transition: { duration: 0.22, ease: [0.16, 1, 0.3, 1] }
+        };
+      }
+      // Default: directional exit
+      return {
+        opacity: 0,
+        x: dir > 0 ? -36 : 36,
+        scale: 0.994,
+        filter: 'blur(3px)',
+        transition: {
+          x: { duration: 0.28, ease: [0.22, 1, 0.36, 1] },
+          opacity: { duration: 0.22 },
+          filter: { duration: 0.2 }
+        }
+      };
+    }
+  };
+
   return (
     <div className="relative w-full flex-1 flex flex-col justify-between bg-[#0A0A0B] overflow-hidden select-none">
       
@@ -187,17 +273,19 @@ export const PresentationPlayer: React.FC<PresentationPlayerProps> = ({
             />
           </div>
 
-          <AnimatePresence mode="wait">
+          <AnimatePresence mode="wait" custom={direction}>
             <motion.div
               key={currentSlide.id}
-              initial={{ opacity: 0, y: 10, scale: 0.99 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -10, scale: 0.99 }}
-              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+              custom={direction}
+              variants={slideVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
               className="w-full h-full flex flex-col"
             >
               <SlideViewer
                 slide={currentSlide}
+                lang={lang}
                 onOpenCalculator={onOpenCalculator}
                 onOpenPortalModal={onOpenPortalModal}
               />
@@ -261,19 +349,19 @@ export const PresentationPlayer: React.FC<PresentationPlayerProps> = ({
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-bold text-amber-500 uppercase tracking-widest flex items-center gap-1.5">
                 <MessageSquare className="w-3.5 h-3.5 text-amber-400" />
-                C-Level Talking Points & Audio Script (Slide {currentSlideIndex + 1})
+                {t.presenter_notes} (Slide {currentSlideIndex + 1})
               </span>
               <button
                 onClick={() => setShowPresenterNotes(false)}
                 className="text-xs text-gray-500 hover:text-white"
               >
-                Close Notes
+                {t.close}
               </button>
             </div>
             
             <p className="text-xs text-gray-300 leading-relaxed bg-[#161618] p-3.5 rounded-lg border border-[#27272A]">
-              <strong className="text-white">Executive Script: </strong>
-              {audioSettings.voiceLanguage === 'es' ? currentSlide.narration.es : currentSlide.narration.en}
+              <strong className="text-white">{t.key_takeaway}: </strong>
+              {currentSlide.narration?.[lang] || currentSlide.narration?.es || currentSlide.subtitle}
             </p>
           </div>
         </div>
@@ -337,8 +425,33 @@ export const PresentationPlayer: React.FC<PresentationPlayerProps> = ({
             </div>
           </div>
 
-          {/* Right: Presentation Utilities (Speed, Notes, Thumbnails, Looping) */}
+          {/* Right: Presentation Utilities (Speed, Notes, Thumbnails, Looping, Transitions) */}
           <div className="flex items-center gap-2">
+            {/* Transition Effect Selector */}
+            <div className="hidden sm:flex items-center bg-[#1A1A1C] rounded-full p-0.5 border border-[#333335] text-[10px]">
+              <span className="px-2 py-0.5 text-[9px] text-amber-400/80 font-bold uppercase tracking-wider font-mono flex items-center gap-1">
+                <Sparkles className="w-2.5 h-2.5" />
+                FX
+              </span>
+              {(['slide', 'fade', 'zoom'] as TransitionEffect[]).map((fx) => (
+                <button
+                  key={fx}
+                  onClick={() => {
+                    audioSynth.playClickSound();
+                    setTransitionEffect(fx);
+                  }}
+                  title={`Motion Transition: ${fx.toUpperCase()}`}
+                  className={`px-2 py-0.5 rounded-full capitalize font-medium transition-all ${
+                    transitionEffect === fx
+                      ? 'bg-amber-500 text-black font-bold shadow-xs'
+                      : 'text-gray-400 hover:text-white'
+                  }`}
+                >
+                  {fx}
+                </button>
+              ))}
+            </div>
+
             {/* Speed Multiplier */}
             <div className="flex items-center bg-[#1A1A1C] rounded-full p-0.5 border border-[#333335] text-[10px]">
               {[0.75, 1.0, 1.25, 1.5].map(spd => (
